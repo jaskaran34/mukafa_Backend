@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Redirect from /public/anything to the root domain
+  RewriteCond %{REQUEST_URI} ^/public/(.+)$
+  RewriteRule ^public/(.*)$ / [R=301,L]
+
+  # Remove trailing slash
+  RewriteRule ^(.*)/$ /$1 [R=301,L]
+
+  # Internally rewrite requests to the /public directory
+  RewriteCond %{REQUEST_URI} !^/public/
+  RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

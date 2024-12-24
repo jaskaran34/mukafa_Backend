@@ -1,0 +1,32 @@
+[
+    {
+        "head": "Nuestra Marca",
+        "title": "Lealtad Recompensada",
+        "description": "¡Comienza a acumular puntos con nosotros hoy!"
+    },
+    {
+        "head": "Recompensas de Verano",
+        "title": "Ahorros Estacionales",
+        "description": "¡Aprovecha nuestra promoción de verano!"
+    },
+    {
+        "head": "Tarjeta de Ahorro",
+        "title": "Gana al Gastar",
+        "description": "¡Acumula puntos cada vez que entrenas con nosotros!"
+    },
+    {
+        "head": "Club de Fitness",
+        "title": "Entrena y Ahorra",
+        "description": "¡Disfruta de nuestros programas y disfruta de emocionantes recompensas!"
+    },
+    {
+        "head": "Tarjeta de Deportista",
+        "title": "Entrena y Gana",
+        "description": "¡Recompensando tu amor por el deporte!"
+    },
+    {
+        "head": "Tarjeta de Lealtad",
+        "title": "Ahorra Ahora",
+        "description": "¡Únete a nuestro programa de lealtad y ahorra en cada compra!"
+    }
+]

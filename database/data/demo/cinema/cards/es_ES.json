@@ -1,0 +1,32 @@
+[
+    {
+        "head": "Bonanza de Éxitos",
+        "title": "Ahorros de Estreno",
+        "description": "¡Obtenga descuentos exclusivos en proyecciones de estreno!"
+    },
+    {
+        "head": "Membresía de Cine",
+        "title": "Ver y Ganar",
+        "description": "¡Acumula puntos cada vez que ves una película con nosotros!"
+    },
+    {
+        "head": "Club de Fanáticos del Cine",
+        "title": "Ver y Ahorrar",
+        "description": "Sumérgete en experiencias cinematográficas y disfruta de ventajas especiales!"
+    },
+    {
+        "head": "Pase de Palomitas",
+        "title": "Picar y Puntuar",
+        "description": "¡Gana recompensas con cada compra de palomitas!"
+    },
+    {
+        "head": "Especiales de Matiné",
+        "title": "Descuentos de Tarde",
+        "description": "¡Disfruta de tarifas con descuento para proyecciones por la tarde!"
+    },
+    {
+        "head": "Festival de Cine de Fin de Semana",
+        "title": "Ofertas de Películas de Fin de Semana",
+        "description": "¡Ve las últimas películas los fines de semana y aprovecha ofertas especiales!"
+    }
+]

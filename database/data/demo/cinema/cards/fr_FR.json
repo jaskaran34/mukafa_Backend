@@ -1,0 +1,32 @@
+[
+    {
+        "head": "Bonanza des Blockbusters",
+        "title": "Économies de Première",
+        "description": "Obtenez des réductions exclusives sur les projections de première!"
+    },
+    {
+        "head": "Adhésion au Cinéma",
+        "title": "Regardez et Gagnez",
+        "description": "Accumulez des points à chaque fois que vous regardez un film chez nous!"
+    },
+    {
+        "head": "Club des Fanatiques de Film",
+        "title": "Voir et Économiser",
+        "description": "Plongez dans des expériences cinématographiques et profitez d'avantages spéciaux!"
+    },
+    {
+        "head": "Pass Popcorn",
+        "title": "Grignotez et Marquez",
+        "description": "Gagnez des récompenses à chaque achat de popcorn!"
+    },
+    {
+        "head": "Spéciaux de Matinée",
+        "title": "Réductions de l'Après-midi",
+        "description": "Profitez de tarifs réduits pour les projections de l'après-midi!"
+    },
+    {
+        "head": "Festival de Film du Week-end",
+        "title": "Offres de Film du Week-end",
+        "description": "Regardez les derniers films le week-end et bénéficiez d'offres spéciales!"
+    }
+]

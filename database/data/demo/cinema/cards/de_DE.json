@@ -1,0 +1,32 @@
+[
+    {
+        "head": "Blockbuster Bonanza",
+        "title": "Premieren-Ersparnisse",
+        "description": "Erhalten Sie exklusive Rabatte bei Premieren-Vorführungen!"
+    },
+    {
+        "head": "Film-Mitgliedschaft",
+        "title": "Schauen und Verdienen",
+        "description": "Sammeln Sie Punkte, jedes Mal wenn Sie einen Film bei uns sehen!"
+    },
+    {
+        "head": "Filmfanatiker Club",
+        "title": "Ansehen und Sparen",
+        "description": "Tauchen Sie in filmische Erlebnisse ein und genießen Sie besondere Vorteile!"
+    },
+    {
+        "head": "Popcorn-Pass",
+        "title": "Snacken und Punkten",
+        "description": "Verdienen Sie Belohnungen mit jedem Popcorn-Kauf!"
+    },
+    {
+        "head": "Matinee-Specials",
+        "title": "Nachmittagsrabatte",
+        "description": "Genießen Sie ermäßigte Preise für Nachmittagsvorführungen!"
+    },
+    {
+        "head": "Wochenend-Filmfest",
+        "title": "Wochenend-Filmangebote",
+        "description": "Sehen Sie die neuesten Filme am Wochenende und nutzen Sie besondere Angebote!"
+    }
+]

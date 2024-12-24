@@ -1,0 +1,32 @@
+[
+    {
+        "head": "Blockbuster Bonanza",
+        "title": "Première Besparingen",
+        "description": "Krijg exclusieve kortingen op première vertoningen!"
+    },
+    {
+        "head": "Film Lidmaatschap",
+        "title": "Kijken en Verdienen",
+        "description": "Verzamel punten elke keer dat je een film bij ons kijkt!"
+    },
+    {
+        "head": "Filmfanaten Club",
+        "title": "Bekijken en Besparen",
+        "description": "Duik in filmervaringen en geniet van speciale voordelen!"
+    },
+    {
+        "head": "Popcorn Pas",
+        "title": "Snacken en Scoren",
+        "description": "Verdien beloningen bij elke popcorn aankoop!"
+    },
+    {
+        "head": "Matinee Specials",
+        "title": "Middagkortingen",
+        "description": "Geniet van gereduceerde tarieven voor middagvoorstellingen!"
+    },
+    {
+        "head": "Weekend Filmfest",
+        "title": "Weekend Film Aanbiedingen",
+        "description": "Bekijk de nieuwste films in het weekend en profiteer van speciale aanbiedingen!"
+    }
+]

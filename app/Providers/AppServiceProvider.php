@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Routing\UrlGenerator;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(UrlGenerator $url): void
+    {
+        if (! app()->runningInConsole()) {
+            // Force SSL if required
+            if (config('default.force_ssl')) {
+                $url->forceScheme('https');
+            }
+        }
+    }
+}

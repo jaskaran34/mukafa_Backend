@@ -1,0 +1,32 @@
+[
+    {
+        "head": "Notre Marque",
+        "title": "Loyauté Récompensée",
+        "description": "Commencez à cumuler des points avec nous aujourd'hui!"
+    },
+    {
+        "head": "Récompenses d'Été",
+        "title": "Économies Saisonnières",
+        "description": "Profitez de notre promotion d'été!"
+    },
+    {
+        "head": "Carte d'Économie",
+        "title": "Gagnez en Dépensant",
+        "description": "Cumulez des points à chaque fois que vous vous entraînez avec nous!"
+    },
+    {
+        "head": "Club de Fitness",
+        "title": "Entraînez-vous et Économisez",
+        "description": "Savourez nos programmes et profitez de récompenses excitantes!"
+    },
+    {
+        "head": "Carte de Sportif",
+        "title": "Entraînez-vous et Gagnez",
+        "description": "Récompensant votre amour pour le sport!"
+    },
+    {
+        "head": "Carte de Fidélité",
+        "title": "Économisez Maintenant",
+        "description": "Rejoignez notre programme de fidélité et économisez à chaque achat!"
+    }
+]
