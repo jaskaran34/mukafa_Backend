@@ -73,6 +73,7 @@ class AdminAuthController extends Controller
      */
     public function login(string $locale, Request $request)
     {
+
         $request->validate([
             'email' => 'required|email|max:96',
             'password' => 'required|min:6|max:48',
