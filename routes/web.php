@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', '\App\Http\Controllers\I18n\LocaleController@redirectToLocale')->name('redir.locale');
+Route::get('/', '\App\Http\Controllers\I18n\LocaleController@redirectToLocale')->name('redir.locale');   //
 
 Route::prefix('{locale}')->group(function () {
     Route::get('scripts/language.js', '\App\Http\Controllers\Javascript\IncludeController@language')->name('javascript.include.language');
@@ -191,9 +191,9 @@ Route::prefix('{locale}')->group(function () {
     });
 
     Route::group(['namespace' => '\App\Http\Controllers', 'prefix' => 'install', 'middleware' => 'not.installed'], function () {
-        Route::get('/', 'Installation\PageController@index')->name('installation.index');
-        Route::get('log', 'Installation\PageController@downloadLog')->name('installation.log');
-        Route::post('/', 'Installation\PageController@postInstall')->name('installation.install');
+        Route::get('/', 'Installation\PageController@index')->name('installation.index');   //
+        Route::get('log', 'Installation\PageController@downloadLog')->name('installation.log');  //
+        Route::post('/', 'Installation\PageController@postInstall')->name('installation.install');  //
     });
 });
 

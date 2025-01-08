@@ -17,8 +17,29 @@
                 <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-blue-500 bg-blue-100 rounded-lg dark:bg-blue-800 dark:text-blue-200">
                     <x-ui.icon icon="info" class="w-5 h-5"/>
                 </div>
-                <div class="ml-3 text-sm font-normal">{{ trans('common.qr_scanner_info') }}</div>
+                <div class="ml-3 text-sm font-normal">{{ trans('common.qr_scanner_info') }} <br/><br/> OR <br/><br/>Add Information Manually Below</div>
             </div>
+
+            <div>
+        <form>
+            <table>
+                <tr>
+                    <td><label class="text-white">Enter Member Id</label></td>
+                    <td><input type="text" id="mem_id" placeholder="Enter Member Id" ></td>
+                </tr>
+                <tr>
+                    <td><label class="text-white">Enter Card Id</label></td>
+                    <td><input type="text" id="card_id" placeholder="Enter Card Id" ></td>
+                </tr>
+               
+
+                <tr>
+                    <td colspan="2"><button type="button"  onclick="send_to_earn_points()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button></td>
+                </tr>
+            </table>
+
+        </form>
+    </div>
 
             <div id="code-found" class="hidden z-40 flex items-center w-full p-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800" role="alert">
                 <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
@@ -30,9 +51,22 @@
             <video id="video" class="w-full rounded-md"></video>
         </div>
     </div>
+   
 </section>
 
 <script>
+    function send_to_earn_points(){
+
+        mem_id=document.getElementById('mem_id').value;
+        card_id=document.getElementById('card_id').value;
+        url='http://dev-mukafa.js.qa/en-us/staff/earn/'+mem_id+'/'+card_id;
+        var form = document.createElement("form");
+        form.method = "GET";
+       // form.target='_blank';
+        form.action = url;
+        document.body.appendChild(form);
+        form.submit();
+    }
 window.onload = function() {
     const codeFound = document.getElementById('code-found');
 

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 
 class AuthService
 {
@@ -72,6 +73,8 @@ class AuthService
         // The 'from' value can be null or a url the user will be redirected to after registration
         $from = $member['from'] ?? null;
         $password = implode('', Arr::random(range(0, 9), 6));
+
+        Log::info($password);
         $i18n = app()->make('i18n');
 
         $member = array_merge($member, [

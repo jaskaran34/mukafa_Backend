@@ -76,6 +76,7 @@ class InstallationService
      */
     public function installScript($request)
     {
+        
         set_time_limit(0);
 
         // Delete log

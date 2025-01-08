@@ -21,7 +21,18 @@ class AuthenticateAdminApi
      * @throws \Illuminate\Auth\AuthenticationException
      */
     public function handle($request, Closure $next)
-    {
+    { 
+      //changed here
+      /*
+      return "hh";
+        $authorizationHeader = $request->header('x-forwarded-authorization'); 
+
+        if($authorizationHeader){
+
+            $request->headers->set('Authorization', $authorizationHeader);
+
+        }
+            */
         $guard = Auth::guard('admin_api');
 
         if (!$guard->check()) {

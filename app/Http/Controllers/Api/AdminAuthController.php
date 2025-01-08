@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+
 
 class AdminAuthController extends Controller
 {
@@ -189,9 +191,12 @@ class AdminAuthController extends Controller
      */
     public function getAdmin(string $locale, Request $request)
     {
+       // return $request->headers->all();
+        //Log::info('This is an informational message.');
+
         // Retrieve admin
         $admin = $request->user('admin_api');
-
+        
         // Hide sensitive information before exposing data
         $admin->hideForPublic();
 

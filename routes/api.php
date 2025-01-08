@@ -3,6 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -12,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 | routes are loaded by the RouteServiceProvider within a group which
 | is assigned the "api" middleware group. Enjoy building your API!
 |
-*/
+*/ 
 
 Route::prefix('{locale}/v1')->group(function () {
     Route::prefix('admin')->group(function () {
