@@ -49,6 +49,10 @@ class Partner extends Authenticatable implements HasLocalePreference, HasMedia
      *
      * @var array
      */
+    /*
+    'phone_prefix',
+        'phone',
+    */
     protected $hiddenForPublic = [
         'affiliate_id',
         'role',
@@ -62,9 +66,7 @@ class Partner extends Authenticatable implements HasLocalePreference, HasMedia
         'account_expires_at',
         'premium_expires_at',
         'country_code',
-        'phone_prefix',
         'phone_country',
-        'phone',
         'phone_e164',
         'is_vip',
         'accepts_text_messages',

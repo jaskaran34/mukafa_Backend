@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
+use App\Models\Staff;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Exceptions;
 class PartnerStaffController extends Controller
 {    
     /**
@@ -115,7 +117,47 @@ class PartnerStaffController extends Controller
      * @param int $staffId The staff member's unique identifier
      * @return \Illuminate\Http\JsonResponse JSON response containing staff member details or error message
      */
-    public function getStaffMember(string $locale, Request $request, int $staffId)
+
+public function register(Request $request){
+
+
+    $request->validate([
+        'email' => 'required|email|max:96|unique:staff',
+        'name' => 'required|max:64',
+        'password' => 'nullable|min:6|max:48',
+    ]);
+
+
+
+    $partner = $request->user('partner_api');
+
+    $staff=Staff::create([
+        'club_id' => $partner->clubs->first()->id,
+        'name' => $request->name,
+        'email' => $request->email,
+        'meta'=> (int) $request->staff_type,
+        'password' => bcrypt($request->password),
+        'role' => 1, // 1 = user
+        'email_verified_at' => Carbon::now('UTC'),
+        'is_active' => true,
+        'is_undeletable' => env('APP_IS_UNEDITABLE', true),
+        'is_uneditable' => env('APP_IS_UNEDITABLE', true),
+        'created_at' => Carbon::now('UTC'),
+        'locale' => config('app.locale'),
+        'currency' => 'QAR',
+        'time_zone' => 'Asia/Qatar',
+        'created_by' => $partner->id,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Staff registered successfully.',
+        'data' => $staff,
+    ], 201);
+    
+
+    }
+     public function getStaffMember(string $locale, Request $request, int $staffId)
     {
         // Verify the partner using the 'partner_api' guard
         $partner = $request->user('partner_api');
@@ -130,6 +172,28 @@ class PartnerStaffController extends Controller
         // If staff member not found, return a 404 response
         if (!$staffMember) {
             return response()->json(['message' => 'Staff member not found'], 404);
+        }
+
+        // Remove sensitive information before sending to the public
+        $staffMember->hideForPublic();
+
+        // Return the staff member details in a JSON response
+        return response()->json($staffMember, 200);
+    }
+
+    public function getsuperStaff(string $locale, Request $request)
+    {
+        // Verify the partner using the 'partner_api' guard
+        $partner = $request->user('partner_api');
+
+        // Fetch the active staff member associated with the partner using staffId, where the associated club is also active
+        $staffMember =$partner->staff()->where('meta', 1)->first();
+
+       
+
+        // If staff member not found, return a 404 response
+        if (!$staffMember) {
+            return response()->json(['message' => 'Super-AdminStaff not found'], 404);
         }
 
         // Remove sensitive information before sending to the public

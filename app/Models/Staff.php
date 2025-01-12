@@ -68,7 +68,6 @@ class Staff extends Authenticatable implements HasLocalePreference, HasMedia
         'phone',
         'phone_e164',
         'phone_prefix',
-        'meta',
         'is_active',
         'is_undeletable',
         'is_uneditable',

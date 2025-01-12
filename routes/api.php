@@ -35,6 +35,9 @@ Route::prefix('{locale}/v1')->group(function () {
         Route::post('login', [App\Http\Controllers\Api\PartnerAuthController::class, 'login']);
 
         Route::middleware('auth:partner_api', 'partner.auth.api')->group(function () {
+
+            Route::post('register/staff', [App\Http\Controllers\Api\PartnerStaffController::class, 'register']);
+
             Route::get('/', [App\Http\Controllers\Api\PartnerAuthController::class, 'getPartner']);
             Route::put('/', [App\Http\Controllers\Api\PartnerController::class, 'update']);
             Route::post('logout', [App\Http\Controllers\Api\PartnerAuthController::class, 'logout']);
@@ -44,8 +47,18 @@ Route::prefix('{locale}/v1')->group(function () {
             Route::get('cards/{cardId}', [App\Http\Controllers\Api\PartnerCardController::class, 'getCard']);
             Route::post('cards/{cardUID}/{memberUID}/transactions/purchases', [App\Http\Controllers\Api\PartnerTransactionController::class, 'addPurchase']);
             Route::post('cards/{cardUID}/{memberUID}/transactions/points', [App\Http\Controllers\Api\PartnerTransactionController::class, 'addPoints']);
+
+            Route::post('cards/{cardUID}/{memberUID}/transactions/points/redeem', [App\Http\Controllers\Api\PartnerTransactionController::class, 'redeemPoints']);
+
             Route::get('staff', [App\Http\Controllers\Api\PartnerStaffController::class, 'getStaff']);
             Route::get('staff/{staffId}', [App\Http\Controllers\Api\PartnerStaffController::class, 'getStaffMember']);
+            Route::get('super/staff', [App\Http\Controllers\Api\PartnerStaffController::class, 'getsuperStaff']);
+        
+            Route::get('member/{memberUID}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'findmember']);
+            Route::get('transaction/member/{memberUID}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'gettransactions']);
+            Route::get('transactions', [App\Http\Controllers\Api\PartnerTransactionController::class, 'alltransactions']);
+            Route::delete('transactions/{tran_id}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'cancel_transaction']);
+       
         });
     });
     Route::prefix('member')->group(function () {

@@ -62,7 +62,7 @@ class PartnerController extends Controller
     {
         $partner = $request->user('partner_api');
 
-        $data = $request->only(['name', 'email', 'locale', 'currency', 'time_zone']);
+        $data = $request->only(['name', 'email', 'locale', 'currency', 'time_zone','phone','phone_prefix']);
 
         $updatedPartner = $partnerService->update($partner, $data);
 

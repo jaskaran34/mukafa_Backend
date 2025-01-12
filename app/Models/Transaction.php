@@ -15,7 +15,7 @@ use Money\Formatter\IntlMoneyFormatter;
 use Money\Currency;
 use Money\Parser\DecimalMoneyParser;
 use Spatie\Translatable\HasTranslations;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Class Transaction
  *
@@ -25,6 +25,7 @@ class Transaction extends Model implements HasMedia
 {
     use HasFactory, HasCustomShortflakePrimary, InteractsWithMedia, HasSchemaAccessors, HasTranslations;
 
+    use SoftDeletes;
     /**
      * The table associated with the model.
      *

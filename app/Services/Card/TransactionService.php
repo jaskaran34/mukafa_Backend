@@ -364,6 +364,124 @@ class TransactionService
         return $transaction;
     }
 
+
+    public function redeemReward(
+        int $card_id, 
+        int $points, 
+        string $member_identifier, 
+        Staff $staff, 
+        string $image = null, 
+        string $note = null, 
+        string $created_at = null
+    ): Transaction|bool {
+        // Fetch member and card details
+        $card = $this->cardService->findActiveCard($card_id);
+        
+        $member = $this->memberService->findActiveByIdentifier($member_identifier);
+        $partner = $card->partner;
+
+        // Check if staff has access to card
+        if (!$staff->isRelatedToCard($card)) {
+            abort(401);
+        }
+
+        if ($card->getMemberBalance($member) < $points) {
+            return false;
+        }
+
+        /**
+         * Updates a member's points balance based on transactions that haven't yet expired. 
+         * This method iterates through all valid transactions and credits reward points.
+         * Points are used from older transactions first (First-In-First-Out)
+         */
+        $transactions = Transaction::where('member_id', $member->id)
+            ->where('card_id', $card->id)
+            ->where('expires_at', '>', Carbon::now())
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $remainingRewardPoints = $points;
+
+        foreach ($transactions as $transaction) {
+            $unusedTransactionPoints = $transaction->points - $transaction->points_used;
+            
+            // Skip the transaction if all points are used or no more reward points left to credit
+            if ($unusedTransactionPoints <= 0 || $remainingRewardPoints <= 0) {
+                continue;
+            }
+            
+            // Calculate the points to be used from the current transaction
+            $pointsToUse = min($remainingRewardPoints, $unusedTransactionPoints);
+            
+            // Update the transaction's used points and persist the changes
+            $transaction->points_used += $pointsToUse;
+            $transaction->save();
+
+            // Decrease the remaining reward points
+            $remainingRewardPoints -= $pointsToUse;
+            
+            // Break the loop if all reward points are credited
+            if ($remainingRewardPoints <= 0) {
+                break;
+            }
+        }
+
+        // Data for transaction record
+        $data = [
+            'staff_id' => $staff->id,
+            'member_id' => $member->id,
+            'card_id' => $card->id,
+            'reward_id' => NULL,
+            'partner_name' => $partner->name,
+            'partner_email' => $partner->email,
+            'staff_name' => $staff->name,
+            'staff_email' => $staff->email,
+            'card_title' => $card->getTranslations('head'),
+            'reward_title' => 'redeem9001',
+            'reward_points' => $points,
+            'currency' => $card->currency,
+            'event' => 'staff_redeemed_points_for_reward',
+            'points' => -$points,
+            'note' => $note,
+            'points_per_currency' => $card->points_per_currency,
+            'min_points_per_purchase' => $card->min_points_per_purchase,
+            'max_points_per_purchase' => $card->max_points_per_purchase,
+            'created_by' => $partner->id,
+            'created_at' => $created_at ?? Carbon::now('UTC'),
+            'updated_at' => $created_at ?? Carbon::now('UTC'),
+        ];
+
+        // Create a new transaction record
+        $transaction = Transaction::create($data);
+
+        // Attach image if present
+        if ($image) {
+            $transaction->addMediaFromRequest('image')->toMediaCollection('image');
+        }
+
+        // Update Card stats
+        $card->number_of_points_redeemed += $points;
+        $card->number_of_rewards_redeemed += 1;
+        $card->last_reward_redeemed_at = Carbon::now('UTC');
+        $card->save();
+
+   /*
+        // Update Reward stats
+        $reward->offsetUnset('images');
+        $reward->number_of_times_redeemed += 1;
+        $reward->save();
+
+        // Add analytics
+        $this->analyticsService->addClaimRewardAnalytic($card, $staff, $member, $reward, $created_at);
+
+        // Send mail
+        if (!$created_at) $member->notify(new RewardClaimed($member, $reward->points, $card, $reward));
+
+        */
+
+        return $transaction;
+    }
+
     /**
      * Deletes the last transaction for a given partner, member and card combination.
      *
