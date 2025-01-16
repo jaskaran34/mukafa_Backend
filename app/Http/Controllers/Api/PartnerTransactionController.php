@@ -139,6 +139,7 @@ class PartnerTransactionController extends Controller
             return $this->handleValidationException($e);
         }
 
+        
         // Extract the image from the request
         $image = $request->file('image');
 
@@ -149,6 +150,7 @@ class PartnerTransactionController extends Controller
             return response()->json(['error' => 'Staff member not found'], 404);
         }
 
+        
         // Create the new purchase
         $transaction = $transactionService->addPurchase(
             $memberUID,
@@ -161,6 +163,7 @@ class PartnerTransactionController extends Controller
             false
         );
 
+       
         // Return the transaction details in a JSON response
         return response()->json($transaction);
     }
@@ -272,8 +275,10 @@ class PartnerTransactionController extends Controller
         $perPage = $request->get('per_page', 10);
 
         
+        
         $query = Transaction::query()
     ->where('created_by', $partner->id)
+    ->where('purchase_amount','>',0)
     ->orderBy('created_at', 'desc')
     ->select('id', 'created_at', 'purchase_amount', 'points', 'note', 'member_id', 'deleted_at')
     ->with([
@@ -281,6 +286,23 @@ class PartnerTransactionController extends Controller
             $query->select('id', 'unique_identifier', 'email');
         }
     ]);
+
+    if($request->get('id')){
+        $query->where('id', 'like', '%' . $request->get('id') . '%');
+    }
+
+    if ($request->get('from_date')) {
+        $query->whereDate('created_at', '>=', $request->get('from_date'));
+    }
+    
+    if ($request->get('to_date')) {
+        $query->whereDate('created_at', '<=', $request->get('to_date'));
+    }
+
+    if($request->get('note')){
+        $query->where('note', 'like', '%' . $request->get('note') . '%');
+    }
+    
 
     switch ($request->get('status')) {
             case 'success':
@@ -297,7 +319,7 @@ class PartnerTransactionController extends Controller
     }
 
 // Paginate the results
-  $data = $query->paginate($perPage);
+  $data = $query->paginate($perPage)->appends($request->except('page'));
 
 
         
@@ -319,7 +341,12 @@ class PartnerTransactionController extends Controller
         
         $transaction->delete();
 
-        return response()->json(['id' => $tran_id,'deleted_at'=>$transaction->deleted_at], 200);
+        $card=$transaction->card;
+        $member=$transaction->member;
+
+        $balance=$card->getMemberBalance($member);
+
+        return response()->json(['id' => $tran_id,'points'=>$transaction->points,'balance'=>$balance,'deleted_at'=>$transaction->deleted_at], 200);
      }
      public function findmember(string $locale,string $memberUID, Request $request){
 

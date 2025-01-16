@@ -175,8 +175,14 @@ class TransactionService
             // Parse $purchase_amount to an integer for database storage
             $currencies = new ISOCurrencies();
             $moneyParser = new DecimalMoneyParser($currencies);
-            $purchase_amount_parsed = $moneyParser->parse((string)$purchase_amount, new Currency($card->currency))->getAmount();
-    
+            if($card->currency=='QAR'){
+                $purchase_amount_parsed = ($moneyParser->parse((string)$purchase_amount, new Currency($card->currency))->getAmount())/100;
+            }
+            else {
+                $purchase_amount_parsed = $moneyParser->parse((string)$purchase_amount, new Currency($card->currency))->getAmount();
+           
+            }
+            
             // Calculate points based on $purchase_amount
             $points = $card->calculatePoints($purchase_amount);
             $number_of_points_issued = $points;
