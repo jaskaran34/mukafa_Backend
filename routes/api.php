@@ -29,6 +29,7 @@ Route::prefix('{locale}/v1')->group(function () {
             Route::get('partners', [App\Http\Controllers\Api\AdminPartnerController::class, 'getPartners']);
             Route::get('partner/{partnerId}', [App\Http\Controllers\Api\AdminPartnerController::class, 'getPartner']);
             Route::put('partner/{partnerId}', [App\Http\Controllers\Api\AdminPartnerController::class, 'updatePartner']);
+            Route::get('transactions', [App\Http\Controllers\Api\PartnerTransactionController::class, 'alltransactions']);
         });
     });
     Route::prefix('partner')->group(function () {
@@ -54,11 +55,14 @@ Route::prefix('{locale}/v1')->group(function () {
             Route::get('staff/{staffId}', [App\Http\Controllers\Api\PartnerStaffController::class, 'getStaffMember']);
             Route::get('super/staff', [App\Http\Controllers\Api\PartnerStaffController::class, 'getsuperStaff']);
         
+            Route::get('member/get/all', [App\Http\Controllers\Api\PartnerTransactionController::class, 'allmembers']);
             Route::get('member/{memberUID}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'findmember']);
             Route::get('transaction/member/{memberUID}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'gettransactions']);
             Route::get('transactions', [App\Http\Controllers\Api\PartnerTransactionController::class, 'alltransactions']);
             Route::delete('transactions/{tran_id}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'cancel_transaction']);
        
+
+            Route::post('register', [App\Http\Controllers\Api\MemberAuthController::class, 'register']);
         });
     });
     Route::prefix('member')->group(function () {
@@ -72,6 +76,9 @@ Route::prefix('{locale}/v1')->group(function () {
             Route::get('followed-cards', [App\Http\Controllers\Api\MemberCardController::class, 'getFollowedCards']);
             Route::get('transacted-cards', [App\Http\Controllers\Api\MemberCardController::class, 'getTransactedCards']);
             Route::get('balance/{cardId}', [App\Http\Controllers\Api\MemberCardController::class, 'getMemberBalance']);
+       
+            Route::get('transactions', [App\Http\Controllers\Api\PartnerTransactionController::class, 'alltransactions']);
+        
         });
     });
 });

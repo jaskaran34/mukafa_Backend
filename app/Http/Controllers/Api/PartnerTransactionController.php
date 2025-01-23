@@ -118,6 +118,29 @@ class PartnerTransactionController extends Controller
      * @param TransactionService $transactionService Service to handle transaction-related operations
      * @return Response JSON response containing transaction details or error message
      */
+
+    public function allmembers(Request $request){
+
+        $partner = $request->user('partner_api');
+
+        $cardIds = $partner->cards->pluck('id');
+        
+        $memberIds = Transaction::whereIn('card_id', $cardIds)
+        ->pluck('member_id')
+        ->unique()
+        ->values();
+
+
+        $members = Member::whereIn('id', $memberIds)->get()
+        ->each(function ($member) {
+            $member->hideForPublic();
+        });
+
+
+
+        return response()->json($members);
+        
+    }
     public function addPurchase(
         string $locale,
         string $cardUID,
@@ -163,9 +186,28 @@ class PartnerTransactionController extends Controller
             false
         );
 
-       
+        $tran=Transaction::findOrFail($transaction->id);        
+        
+        $tran->delete();
+
+
+        $data = Transaction::withTrashed()
+            ->where('id', $transaction->id)
+            ->select('id', 'created_at', 'note','status')
+            ->selectRaw('ABS(points) as points')
+            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            ->selectRaw('
+                CASE 
+                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+                END as status
+')
+            ->selectRaw('"Transaction Status success" as transaction_status')
+            ->firstOrFail();
         // Return the transaction details in a JSON response
-        return response()->json($transaction);
+        return response()->json($data);
     }
 
     /**
@@ -271,21 +313,106 @@ class PartnerTransactionController extends Controller
 
      public function alltransactions(string $locale,Request $request){
          
-        $partner = $request->user('partner_api');
         $perPage = $request->get('per_page', 10);
+ 
+        $partner = $request->user('partner_api');
+        $admin = $request->user('admin_api');
+        $member = $request->user('member_api');
 
         
-        
-        $query = Transaction::query()
-    ->where('created_by', $partner->id)
-    ->where('purchase_amount','>',0)
-    ->orderBy('created_at', 'desc')
-    ->select('id', 'created_at', 'purchase_amount', 'points', 'note', 'member_id', 'deleted_at')
-    ->with([
-        'member' => function ($query) {
-            $query->select('id', 'unique_identifier', 'email');
+
+        if($partner){
+
+            $query = Transaction::withTrashed()
+        ->where('created_by', $partner->id)
+        ->orderBy('created_at', 'desc')
+        ->select('id', 'created_at', 'purchase_amount', 'note', 'member_id', 'card_id', 'staff_id', 'deleted_at','status')
+        ->selectRaw('ABS(points) as points')
+        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
+        ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+        ->selectRaw('
+                CASE 
+                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+                END as status
+')
+        ->with([
+            'staff' => function ($query) {
+                $query->select('id', 'name', 'email');
+            },
+            'card' => function ($query) {
+                $query->select('id', 'name');
+            },
+            'member' => function ($query) {
+                $query->select('id', 'unique_identifier', 'email','phone');
+            }
+        ]);
+
         }
-    ]);
+        elseif($admin){
+            $query = Transaction::withTrashed()
+        ->orderBy('created_at', 'desc')
+        ->select('id', 'created_at', 'purchase_amount', 'note','created_by', 'member_id', 'card_id', 'staff_id', 'deleted_at','status')
+        ->selectRaw('ABS(points) as points')
+        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
+        ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+        ->selectRaw('
+                CASE 
+                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+                END as status
+')
+        ->with([
+            'staff' => function ($query) {
+                $query->select('id', 'name', 'email');
+            },
+            'getpartner' => function ($query) {
+                $query->select('id', 'name', 'email'); 
+            },
+            'card' => function ($query) {
+                $query->select('id', 'name');
+            },
+            'member' => function ($query) {
+                $query->select('id', 'unique_identifier', 'email','phone');
+            }
+        ]);
+        }
+        elseif($member){
+
+            $query = Transaction::withTrashed()
+        ->where('member_id', $member->id)
+        ->orderBy('created_at', 'desc')
+        ->select('id', 'created_at', 'purchase_amount', 'note', 'member_id', 'card_id', 'staff_id', 'deleted_at','status')
+        ->selectRaw('ABS(points) as points')
+        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
+        ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+        ->selectRaw('
+                CASE 
+                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+                END as status
+')
+        ->with([
+            'staff' => function ($query) {
+                $query->select('id', 'name', 'email');
+            },
+            'card' => function ($query) {
+                $query->select('id', 'name');
+            },
+            'member' => function ($query) {
+                $query->select('id', 'unique_identifier', 'email','phone');
+            }
+        ]);
+        }
+        
+         
+        
 
     if($request->get('id')){
         $query->where('id', 'like', '%' . $request->get('id') . '%');
@@ -306,17 +433,24 @@ class PartnerTransactionController extends Controller
 
     switch ($request->get('status')) {
             case 'success':
-                // No changes needed; query remains as is
+                $query->where('status','completed');
                 break;
 
             case 'cancelled':
-                $query->onlyTrashed();
+                $query->where('status','cancelled');
+                //$query->whereIn('status', ['cancelled', 'refunded']);
                 break;
+            case 'pending':
+                $query->where('status','pending');
+                break;
+            case 'refunded':
+                $query->where('status','refunded');
+                break;        
 
             default:
-                $query->withTrashed();
                 break;
     }
+
 
 // Paginate the results
   $data = $query->paginate($perPage)->appends($request->except('page'));
@@ -326,27 +460,42 @@ class PartnerTransactionController extends Controller
             return response()->json($data);
         
      }
-     public function cancel_transaction(string $locale,$tran_id, Request $request){
+     public function cancel_transaction(string $locale,$tran_id, Request $request,TransactionService $transactionService,
+     StaffService $staffService){
 
+        $remarks= $request->input('remarks');
+
+        
         $partner = $request->user('partner_api');
 
-        $transaction = Transaction::findOrFail($tran_id); 
+        $transaction = Transaction::withTrashed()->findOrFail($tran_id);
+    
+       
 
-        if(!$transaction) {
-            return response()->json(['message' => 'No Transaction found'], 404);
-        }
+        $member=Member::findOrFail($transaction->member_id);
 
-        $transaction->deleted_by = $partner->id; 
-        $transaction->save();
         
-        $transaction->delete();
+        
+        $cancelled_transaction=$this->refundPoints($transaction->id,$transaction->card_id,$member->unique_identifier,$transaction->points,$transaction->staff_id,$transaction->note,$transactionService,$staffService);
+        
 
+        
+        
         $card=$transaction->card;
-        $member=$transaction->member;
+        $member_mod=$transaction->member;
 
-        $balance=$card->getMemberBalance($member);
+        $balance=$card->getMemberBalance($member_mod);
 
-        return response()->json(['id' => $tran_id,'points'=>$transaction->points,'balance'=>$balance,'deleted_at'=>$transaction->deleted_at], 200);
+
+        $transaction->status='cancelled';
+        $transaction->remarks=$remarks;
+        $transaction->save();
+
+        return response()->json(['id' => $cancelled_transaction->remarks,'points'=>abs($cancelled_transaction->points),'balance'=>$balance,
+        'deleted_at'=>$transaction->deleted_at,
+        'cancel_tran_id'=> $cancelled_transaction->id,
+        'remarks'=>$transaction->remarks
+    ], 200);
      }
      public function findmember(string $locale,string $memberUID, Request $request){
 
@@ -367,6 +516,14 @@ class PartnerTransactionController extends Controller
 
              $points = $card->getMemberBalance($member);
 
+             $pending_points = Transaction::onlyTrashed()
+             ->where('member_id', $member->id)
+             ->where('created_by', $partner->id)
+             ->sum('points');
+
+            
+             
+
 
              if($partner->currency=='QAR'){
                 $amount=((int)$points)/100;
@@ -379,7 +536,8 @@ class PartnerTransactionController extends Controller
                 'currency'=>$partner->currency,
                 'card_id'=>$card_id,
                 'cardUID'=>$cardUID,
-                'card_name'=>$card_name
+                'card_name'=>$card_name,
+                'pending_points'=>$pending_points
             ], 200);
         }
         
@@ -424,9 +582,58 @@ $transaction = $transactionService->redeemReward(
     $request->note
 );
 
+$data = Transaction::withTrashed()
+            ->where('id', $transaction->id)
+            ->select('id', 'created_at', 'note','status')
+            ->selectRaw('ABS(points) as points')
+            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            ->selectRaw('
+                CASE 
+                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+                END as status
+')
+            ->selectRaw('"Transaction Status success" as transaction_status')
+            ->firstOrFail();
+
+
+
 
 // Return the transaction details in a JSON response
-return response()->json($transaction);
+return response()->json($data);
+
+     }
+
+
+
+     public function refundPoints($reference,$cardid,$memberUID,$points,$staffid,$note,
+     TransactionService $transactionService,
+          StaffService $staffService)
+     {
+        
+        
+        
+$staff = $staffService->findActiveById($staffid);
+
+
+$transaction = $transactionService->refund(
+    $reference,
+    $cardid, 
+    $points, 
+    $memberUID, 
+    $staff,  
+    NULL, 
+    $note
+);
+
+
+
+
+
+// Return the transaction details in a JSON response
+return $transaction;
 
      }
      
@@ -469,6 +676,9 @@ return response()->json($transaction);
             $validatedData['note'],
             true
         );
+
+        
+               
 
         // Return the transaction details in a JSON response
         return response()->json($transaction);
@@ -553,6 +763,8 @@ return response()->json($transaction);
          ], 422);
      }
      public function gettransactions(string $locale,string $memberUID, Request $request){
+
+        $partner = $request->user('partner_api');
         
         $member=Member::where('unique_identifier',$memberUID)->first();
 
@@ -562,10 +774,22 @@ return response()->json($transaction);
         
             
         
-        $data = Transaction::where('member_id', $member->id)
+        $data = Transaction::withTrashed()
+            ->where('member_id', $member->id)
+            ->where('created_by', $partner->id)
             ->orderBy('created_at', 'desc')
             ->take(10)
-            ->select('id', 'created_at', 'purchase_amount', 'points', 'note', 'staff_id', 'card_id')
+            ->select('id', 'created_at', 'purchase_amount', 'note', 'staff_id', 'card_id','event','status')
+            ->selectRaw('ABS(points) as points')
+            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            ->selectRaw('
+                CASE 
+                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+                END as status
+')
             ->with([
                 'staff' => function ($query) {
                     $query->select('id', 'name', 'email');
@@ -575,9 +799,8 @@ return response()->json($transaction);
                 },
             ])
             ->get();
-        
-        
-    
+
+
        
 
 

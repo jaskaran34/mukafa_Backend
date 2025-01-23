@@ -194,6 +194,7 @@ class TransactionService
             $bonusData = array_merge($data, [
                 'points' => $card->initial_bonus_points,
                 'event' => 'initial_bonus_points',
+                'status' => 'completed',
                 'created_at' => $created_at,
                 'updated_at' => $created_at,
             ]);
@@ -445,6 +446,7 @@ class TransactionService
             'card_title' => $card->getTranslations('head'),
             'reward_title' => 'redeem9001',
             'reward_points' => $points,
+            'status'=>'completed',
             'currency' => $card->currency,
             'event' => 'staff_redeemed_points_for_reward',
             'points' => -$points,
@@ -484,6 +486,69 @@ class TransactionService
         if (!$created_at) $member->notify(new RewardClaimed($member, $reward->points, $card, $reward));
 
         */
+
+        return $transaction;
+    }
+
+
+    public function refund(
+        string $remarks,
+        int $card_id, 
+        int $points, 
+        string $member_identifier, 
+        Staff $staff, 
+        string $image = null, 
+        string $note = null, 
+        string $created_at = null
+    ): Transaction|bool {
+        // Fetch member and card details
+        $card = $this->cardService->findActiveCard($card_id);
+        
+        $member = $this->memberService->findActiveByIdentifier($member_identifier);
+        $partner = $card->partner;
+
+        // Check if staff has access to card
+        if (!$staff->isRelatedToCard($card)) {
+            abort(401);
+        }
+
+
+        /**
+         * Updates a member's points balance based on transactions that haven't yet expired. 
+         * This method iterates through all valid transactions and credits reward points.
+         * Points are used from older transactions first (First-In-First-Out)
+         */
+        // Data for transaction record
+        $data = [
+            'staff_id' => $staff->id,
+            'member_id' => $member->id,
+            'card_id' => $card->id,
+            'reward_id' => NULL,
+            'partner_name' => $partner->name,
+            'partner_email' => $partner->email,
+            'staff_name' => $staff->name,
+            'staff_email' => $staff->email,
+            'card_title' => $card->getTranslations('head'),
+            'reward_title' => 'redeem9001',
+            'reward_points' => $points,
+            'status'=>'refunded',
+            'remarks'=> $remarks,
+            'currency' => $card->currency,
+            'event' => 'staff_redeemed_points_for_reward',
+            'points' => -$points,
+            'note' => $note,
+            'points_per_currency' => $card->points_per_currency,
+            'min_points_per_purchase' => $card->min_points_per_purchase,
+            'max_points_per_purchase' => $card->max_points_per_purchase,
+            'created_by' => $partner->id,
+            'created_at' => $created_at ?? Carbon::now('UTC'),
+            'updated_at' => $created_at ?? Carbon::now('UTC'),
+            'deleted_at' => $created_at ?? Carbon::now('UTC'),
+        ];
+
+        // Create a new transaction record
+        $transaction = Transaction::create($data);
+
 
         return $transaction;
     }

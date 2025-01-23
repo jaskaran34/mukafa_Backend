@@ -212,4 +212,9 @@ class Transaction extends Model implements HasMedia
     {
         return $this->belongsTo(Reward::class, 'created_by');
     }
+
+    public function getpartner()
+{
+    return $this->belongsTo(Partner::class, 'created_by', 'id'); 
+}
 }

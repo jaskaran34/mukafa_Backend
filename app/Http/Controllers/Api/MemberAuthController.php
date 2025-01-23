@@ -11,6 +11,10 @@ use App\Services\Member\MemberService;
 use Carbon\Carbon;
 use App\Notifications\Member\Registration;
 
+use App\Models\Partner;
+use App\Models\Card;
+use App\Models\Transaction;
+
 class MemberAuthController extends Controller
 {
     /**
@@ -108,9 +112,14 @@ class MemberAuthController extends Controller
      */
     public function register(Request $request, MemberService $memberService)
     {
+
+        
+        
         // Validate request inputs
         $request->validate([
             'email' => 'required|email|max:96|unique:members',
+            'phone' => ['required', 'regex:/^[0-9]{10}$/', 'unique:members'],
+            'phone_prefix'=>'required|min:2|max:4',
             'name' => 'required|max:64',
             'password' => 'nullable|min:6|max:48',
             'time_zone' => 'nullable',
@@ -120,13 +129,21 @@ class MemberAuthController extends Controller
             'currency' => 'nullable|min:3|max:3',
         ]);
     
+       
+
+        $locale = $request->input('locale', 'en_US'); 
+        $currency = $request->input('currency','QAR');
+        $time_zone = $request->input('time_zone', 'Asia/Qatar');
+        $send_mail = $request->input('send_mail', 0);
+
+        /*
         // Get or set default values for optional parameters
         $i18n = app()->make('i18n');
         $locale = $request->input('locale', $i18n->language->current->locale);
         $currency = $request->input('currency', $i18n->currency->id);
         $time_zone = $request->input('time_zone', $i18n->time_zone);
         $send_mail = $request->input('send_mail', 0);
-    
+    */
         // Generate password if not provided
         $password = $request->input('password');
         if (is_null($password)) {
@@ -137,6 +154,8 @@ class MemberAuthController extends Controller
         $response = [
             'email' => $request->input('email'),
             'name' => $request->input('name'),
+            'phone' => $request->input('phone'),
+            'phone_prefix' => $request->input('phone_prefix'),
             'password' => $password,
             'time_zone' => $time_zone,
             'accepts_emails' => (int) $request->input('accepts_emails', 0),
@@ -147,6 +166,12 @@ class MemberAuthController extends Controller
     
         // Prepare member array for storing in the database
         $member = $response;
+        $response=[
+            'email' => $request->input('email'),
+            'name' => $request->input('name'),
+            'phone' => $request->input('phone'),
+            'password' => $password
+        ];
         $member['password'] = bcrypt($password);
     
         // 'send_mail' should not be stored in the database
@@ -155,13 +180,64 @@ class MemberAuthController extends Controller
         // Save new member to database
         $newMember = $memberService->store($member);
     
+        if($request->partner_id && $request->partner_id=='248216521760768'){
+          
+            $partner=Partner::findOrFail($request->partner_id);
+            $staff=$partner->superadminstaff->first();
+            
+            //$cards=$partner->cards;
+            $card=Card::where('id','248378951208960')->where('created_by',$partner->id)->first();
+
+            $created_at =  Carbon::now('UTC');
+            $expires_at = (!$created_at instanceof Carbon) ? Carbon::parse($created_at) : $created_at->copy();
+
+            $data = [
+                'staff_id' => $staff->id,
+                'member_id' => $newMember->id,
+                'card_id' => $card->id,
+                'partner_name' => $partner->name,
+                'partner_email' => $partner->email,
+                'staff_name' => $staff->name,
+                'staff_email' => $staff->email,
+                'card_title' => $card->getTranslations('head'),
+                'currency' => $card->currency,
+                'points_per_currency' => $card->points_per_currency,
+                'meta' => [
+                    'round_points_up' => $card->meta && is_array($card->meta) && isset($card->meta['round_points_up']) ? (bool) $card->meta['round_points_up'] : true
+                ],
+                'min_points_per_purchase' => $card->min_points_per_purchase,
+                'max_points_per_purchase' => $card->max_points_per_purchase,
+                'expires_at' => $expires_at->addMonths($card->points_expiration_months)->format('Y-m-d H:i:s'),
+                'created_by' => $partner->id,
+            ];
+            $data['purchase_amount'] = null;
+            $data['note'] = 'Issue Initial Bonus';
+            
+
+            if ($card->initial_bonus_points && !Transaction::where('member_id', $newMember->id)->where('card_id', $card->id)->exists()) {
+                $bonusData = array_merge($data, [
+                    'points' => $card->initial_bonus_points,
+                    'event' => 'initial_bonus_points',
+                    'status' => 'completed',
+                    'created_at' => $created_at,
+                    'updated_at' => $created_at,
+                ]);
+                $transaction = Transaction::create($bonusData);
+    
+                
+            }
+
+        }
+
+
+
         // Send registration mail if requested
         if ((int) $send_mail === 1) {
             $newMember->notify(new Registration($member['email'], $password, 'member'));
         }
-    
+        $response['unique_identifier']=$newMember->unique_identifier; 
         // Return a response with member details
-        return response()->json($response, 200);
+        return response()->json($response, 201);
     }
 
     /**

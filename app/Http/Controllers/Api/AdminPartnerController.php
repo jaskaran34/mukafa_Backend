@@ -6,16 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Services\Partner\PartnerService;
 use Illuminate\Http\Request;
 use App\Models\Partner;
+use App\Models\Transaction;
+
 
 class AdminPartnerController extends Controller
 {
     protected $partnerService;
+    
 
     public function __construct(PartnerService $partnerService)
     {
         $this->partnerService = $partnerService;
     }
 
+
+
+    
+    
     /**
      * Retrieve all accessible partners for the authenticated administrator.
      *

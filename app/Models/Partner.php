@@ -274,4 +274,8 @@ class Partner extends Authenticatable implements HasLocalePreference, HasMedia
     {
         return $this->hasMany(Staff::class, 'created_by');
     }
+
+    public function superadminstaff() { 
+        return $this->hasMany(Staff::class, 'created_by')->where('meta', '1'); 
+    }
 }
