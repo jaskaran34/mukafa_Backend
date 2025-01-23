@@ -123,6 +123,7 @@ class TransactionService
      */
     public function addPurchase(
         string $member_identifier, 
+        string $partner_id = null,
         string $card_identifier, 
         Staff $staff, 
         ?float $purchase_amount, 
@@ -131,12 +132,41 @@ class TransactionService
         string $note = null, 
         bool $points_only,
         string $created_at = null
+        
     ): Transaction {
-        // Fetch member and card details
+
         $member = $this->memberService->findActiveByIdentifier($member_identifier);
-        $card = $this->cardService->findActiveCardByIdentifier($card_identifier);
+        if($partner_id=='248216521760768'){
+            //amount_member_spent_in_last_one_year
+            $amount=Transaction::where('created_by', $partner_id)
+            ->where('member_id', $member->id)
+            ->where('status', 'completed')
+            ->where('currency', 'QAR')
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', [now()->subYear(), now()]) 
+            ->sum('purchase_amount');
+
+        
+
+     if((int)$amount> 10000 and (int)$amount<50000) {
+             $card=Card::findOrFail('248384746274816');
+     }   
+     else if((int)$amount> 50000 and (int)$amount<150000){
+         $card=Card::findOrFail('248616202493952');
+     }
+     else{
+         $card=Card::findOrFail('248378951208960');
+     }
+
+    }
+                  else{
+                    $card = $this->cardService->findActiveCardByIdentifier($card_identifier);
+            }
+            
+        // Fetch member and card details
+        
         $partner = $card->partner;
-        $created_at = $created_at ?? Carbon::now('UTC');
+        $created_at = $created_at ?? Carbon::now();
 
         // Check if staff has access to card
         if (!$staff->isRelatedToCard($card)) {
@@ -182,9 +212,11 @@ class TransactionService
                 $purchase_amount_parsed = $moneyParser->parse((string)$purchase_amount, new Currency($card->currency))->getAmount();
            
             }
-            
+
+                    
             // Calculate points based on $purchase_amount
             $points = $card->calculatePoints($purchase_amount);
+
             $number_of_points_issued = $points;
             $data['purchase_amount'] = $purchase_amount_parsed;
         }

@@ -119,28 +119,50 @@ class PartnerTransactionController extends Controller
      * @return Response JSON response containing transaction details or error message
      */
 
-    public function allmembers(Request $request){
-
-        $partner = $request->user('partner_api');
-
-        $cardIds = $partner->cards->pluck('id');
-        
-        $memberIds = Transaction::whereIn('card_id', $cardIds)
-        ->pluck('member_id')
-        ->unique()
-        ->values();
-
-
-        $members = Member::whereIn('id', $memberIds)->get()
-        ->each(function ($member) {
-            $member->hideForPublic();
-        });
-
-
-
-        return response()->json($members);
-        
-    }
+     public function allmembers(Request $request)
+     {
+         $partner = $request->user('partner_api');
+         $cardIds = $partner->cards->pluck('id');
+     
+         if ($cardIds->isEmpty()) {
+             return response()->json([], 200); // No cards, return empty array
+         }
+     
+         // Step 1: Get unique member IDs linked to the partner's cards
+         $memberIds = Transaction::whereIn('card_id', $cardIds)
+             ->distinct()
+             ->pluck('member_id');
+     
+         // Step 2: Get the most recent transaction for each member
+         $recentTransactions = Transaction::whereIn('member_id', $memberIds)
+             ->select('member_id', 'card_id')
+             ->orderBy('created_at', 'desc')
+             ->get()
+             ->unique('member_id'); // Get the latest transaction for each member
+     
+         // Map member_id => card_id
+         $memberCardMap = $recentTransactions->pluck('card_id', 'member_id');
+     
+         // Step 3: Fetch members and attach their most recent card_id
+         $members = Member::whereIn('id', $memberIds)
+             ->orderBy('created_at', 'desc')
+             ->get()
+             ->each(function ($member) use ($memberCardMap) {
+                $member->createddate = Carbon::parse($member->created_at)->format('d-m-Y');
+                 $member->card_uid = Card::find($memberCardMap[$member->id])->unique_identifier ?? null; // Add card_id to each member
+                 $member->card_name = Card::find($memberCardMap[$member->id])->name ?? null;
+                 $member->hideForPublic();
+                 $member->balance = Card::find($memberCardMap[$member->id])->getMemberBalance($member) ?? null;
+                 $member->balance_pending = Transaction::withTrashed()->where('card_id', $memberCardMap[$member->id])
+                 ->where('member_id', $member->id)
+                 ->where('status', 'pending')
+                 ->whereNotNull('deleted_at') // Proper syntax for checking non-null values
+                 ->sum('points');
+             });
+     
+         return response()->json($members);
+     }
+     
     public function addPurchase(
         string $locale,
         string $cardUID,
@@ -177,6 +199,7 @@ class PartnerTransactionController extends Controller
         // Create the new purchase
         $transaction = $transactionService->addPurchase(
             $memberUID,
+            $partner->id,
             $cardUID,
             $staff,
             $validatedData['purchase_amount'],
@@ -500,7 +523,7 @@ class PartnerTransactionController extends Controller
      public function findmember(string $locale,string $memberUID, Request $request){
 
         $partner = $request->user('partner_api');
-        
+        $partner_id=$partner->id;
 
         //return $partner;
         $member =Member::where('unique_identifier',$memberUID)->first();
@@ -508,11 +531,34 @@ class PartnerTransactionController extends Controller
             return response()->json(['message' => 'Member not found'], 404);
         }
         else{
-            $card_id="248378951208960";
-             $cardUID="879-645-606-742";
-             $card_name="KB Tier Card";
 
-             $card = Card::findOrFail($card_id);
+            if($partner_id=='248216521760768'){
+                //amount_member_spent_in_last_one_year
+                $amount=Transaction::where('created_by', $partner_id)
+                ->where('member_id', $member->id)
+                ->where('status', 'completed')
+                ->where('currency', 'QAR')
+                ->whereNull('deleted_at')
+                ->whereBetween('created_at', [now()->subYear(), now()]) 
+                ->sum('purchase_amount');
+
+            
+
+         if((int)$amount> 10000 and (int)$amount<50000) {
+                 $card=Card::findOrFail('248384746274816');
+         }   
+         else if((int)$amount> 50000 and (int)$amount<150000){
+             $card=Card::findOrFail('248616202493952');
+         }
+         else{
+             $card=Card::findOrFail('248378951208960');
+         }
+
+        }
+        
+        
+
+            
 
              $points = $card->getMemberBalance($member);
 
@@ -534,9 +580,9 @@ class PartnerTransactionController extends Controller
                 'points'=>$points,
                 'amount'=>$amount,
                 'currency'=>$partner->currency,
-                'card_id'=>$card_id,
-                'cardUID'=>$cardUID,
-                'card_name'=>$card_name,
+                'card_id'=>$card->id,
+                'cardUID'=>$card->unique_identifier,
+                'card_name'=>$card->name,
                 'pending_points'=>$pending_points
             ], 200);
         }

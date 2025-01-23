@@ -188,7 +188,7 @@ class MemberAuthController extends Controller
             //$cards=$partner->cards;
             $card=Card::where('id','248378951208960')->where('created_by',$partner->id)->first();
 
-            $created_at =  Carbon::now('UTC');
+            $created_at =  Carbon::now();
             $expires_at = (!$created_at instanceof Carbon) ? Carbon::parse($created_at) : $created_at->copy();
 
             $data = [
