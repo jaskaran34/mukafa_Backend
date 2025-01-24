@@ -217,7 +217,7 @@ class MemberAuthController extends Controller
             if ($card->initial_bonus_points && !Transaction::where('member_id', $newMember->id)->where('card_id', $card->id)->exists()) {
                 $bonusData = array_merge($data, [
                     'points' => $card->initial_bonus_points,
-                    'event' => 'initial_bonus_points',
+                    'event' => 'initial_bonus_points '.$card->name,
                     'status' => 'completed',
                     'created_at' => $created_at,
                     'updated_at' => $created_at,
