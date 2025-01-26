@@ -127,6 +127,9 @@ class MemberAuthController extends Controller
             'send_mail' => 'nullable|boolean',
             'locale' => 'nullable|min:5|max:12',
             'currency' => 'nullable|min:3|max:3',
+            'birthday' => 'required|date',
+            'anniversary_date' => 'nullable|date',
+            
         ]);
     
        
@@ -155,6 +158,8 @@ class MemberAuthController extends Controller
             'email' => $request->input('email'),
             'name' => $request->input('name'),
             'phone' => $request->input('phone'),
+            'birthday' => $request->input('birthday'),
+            'anniversary_date' => $request->input('anniversary_date'),
             'phone_prefix' => $request->input('phone_prefix'),
             'password' => $password,
             'time_zone' => $time_zone,
@@ -166,12 +171,7 @@ class MemberAuthController extends Controller
     
         // Prepare member array for storing in the database
         $member = $response;
-        $response=[
-            'email' => $request->input('email'),
-            'name' => $request->input('name'),
-            'phone' => $request->input('phone'),
-            'password' => $password
-        ];
+       
         $member['password'] = bcrypt($password);
     
         // 'send_mail' should not be stored in the database
@@ -179,6 +179,14 @@ class MemberAuthController extends Controller
     
         // Save new member to database
         $newMember = $memberService->store($member);
+
+        $response=[
+            'email' => $request->input('email'),
+            'name' => $request->input('name'),
+            'phone' => $request->input('phone'),
+            'birthday' => $request->input('birthday'),
+            'status'=>'Success'
+        ];
     
         if($request->partner_id && $request->partner_id=='248216521760768'){
           

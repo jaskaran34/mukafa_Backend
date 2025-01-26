@@ -119,6 +119,82 @@ class PartnerTransactionController extends Controller
      * @return Response JSON response containing transaction details or error message
      */
 
+
+     public function get_last_card($partner_id,$member_id){
+        
+        $card_last_transaction =Transaction::where('created_by', $partner_id)
+         ->where('member_id', $member_id)
+         ->where('status', 'completed')
+         ->where('currency', 'QAR')
+         ->whereNull('deleted_at')
+         ->whereBetween('created_at', [now()->subYear(), now()])
+         ->orderBy('created_at', 'desc') // Fetch the latest transaction
+         ->select('card_id')
+         ->first();
+
+         return $card_last_transaction;
+ 
+      }
+
+     public function get_balance($partner_id,$member){
+
+        $card_last_transaction = $this->get_last_card($partner_id,$member->id);
+
+
+                    $card = Card::findOrFail($card_last_transaction['card_id']);
+                
+
+                    if($card_last_transaction['card_id']=='248378951208960'){
+                        $points = $card->getMemberBalance($member);
+                    }
+                    elseif($card_last_transaction['card_id']=='248384746274816'){
+                        
+                        $points = $card->getMemberBalance($member);
+    
+                        $prev_card1='248378951208960';
+                        $prev_card_find = Card::findOrFail($prev_card1);
+                        $prev_balance=$prev_card_find->getMemberBalance($member);
+                        $points=$points+$prev_balance;
+    
+                    }
+                    elseif($card_last_transaction['card_id']=='248616202493952'){
+                        $points = $card->getMemberBalance($member);
+    
+                        $prev_card1='248378951208960';
+                        $prev_card_find = Card::findOrFail($prev_card1);
+                        $prev_balance=$prev_card_find->getMemberBalance($member);
+    
+                        $prev_card2='248384746274816';
+                        $prev_card_find2 = Card::findOrFail($prev_card2);
+                        $prev_balance2=$prev_card_find2->getMemberBalance($member);
+    
+                        $points=$points+$prev_balance+$prev_balance2;
+    
+    
+                    }
+                    elseif($card_last_transaction['card_id']=='256023038738432'){
+                        $points = $card->getMemberBalance($member);
+    
+                        $prev_card1='248378951208960';
+                        $prev_card_find = Card::findOrFail($prev_card1);
+                        $prev_balance=$prev_card_find->getMemberBalance($member);
+    
+                        $prev_card2='248384746274816';
+                        $prev_card_find2 = Card::findOrFail($prev_card2);
+                        $prev_balance2=$prev_card_find2->getMemberBalance($member);
+    
+                        $prev_card3='248616202493952';
+                        $prev_card_find3 = Card::findOrFail($prev_card3);
+                        $prev_balance3=$prev_card_find3->getMemberBalance($member);
+    
+                        $points=$points+$prev_balance+$prev_balance2+$prev_balance3;
+    
+                        
+                    }
+
+                    return $points;
+
+     }
      public function allmembers(Request $request)
      {
          $partner = $request->user('partner_api');
@@ -147,13 +223,19 @@ class PartnerTransactionController extends Controller
          $members = Member::whereIn('id', $memberIds)
              ->orderBy('created_at', 'desc')
              ->get()
-             ->each(function ($member) use ($memberCardMap) {
+             ->each(function ($member) use ($memberCardMap,$partner) {
                 $member->createddate = Carbon::parse($member->created_at)->format('d-m-Y');
                  $member->card_uid = Card::find($memberCardMap[$member->id])->unique_identifier ?? null; // Add card_id to each member
                  $member->card_name = Card::find($memberCardMap[$member->id])->name ?? null;
                  $member->hideForPublic();
-                 $member->balance = Card::find($memberCardMap[$member->id])->getMemberBalance($member) ?? null;
-                 $member->balance_pending = Transaction::withTrashed()->where('card_id', $memberCardMap[$member->id])
+                 $member->partner_id=$partner->id;
+                 if($member->partner_id=='248216521760768'){
+                $member->balance=$this->get_balance($member->partner_id,$member); 
+                }
+                else{
+                    $member->balance = Card::find($memberCardMap[$member->id])->getMemberBalance($member) ?? null;
+                }
+                $member->balance_pending = Transaction::withTrashed()->where('status','pending')->where('card_id', $memberCardMap[$member->id])
                  ->where('member_id', $member->id)
                  ->where('status', 'pending')
                  ->whereNotNull('deleted_at') // Proper syntax for checking non-null values
@@ -533,50 +615,28 @@ class PartnerTransactionController extends Controller
         else{
 
             if($partner_id=='248216521760768'){
-                $card_last_transaction = Transaction::where('created_by', $partner_id)
-                ->where('member_id', $member->id)
-                ->where('status', 'completed')
-                ->where('currency', 'QAR')
-                ->whereNull('deleted_at')
-                ->whereBetween('created_at', [now()->subYear(), now()])
-                ->orderBy('created_at', 'desc') // Fetch the latest transaction
-                ->select('card_id')
-                ->first(); // Retrieve the first result
-
-                
+                $points=$this->get_balance($partner_id,$member); 
+                $card_last_transaction = $this->get_last_card($partner_id,$member->id);
                 $card = Card::findOrFail($card_last_transaction['card_id']);
-                
 
-                if($card_last_transaction['card_id']=='248378951208960'){
-                    $points = $card->getMemberBalance($member);
-                }
-                elseif($card_last_transaction['card_id']=='248384746274816'){
-                    
-                    $points = $card->getMemberBalance($member);
+            }
+            else{
+                $card_last_transaction = $this->get_last_card($partner_id,$member->id);
+                $card = Card::findOrFail($card_last_transaction['card_id']);
+                $points=$card->getMemberBalance($member);
+            }
 
-                    $prev_card1='248378951208960';
-                    $prev_card_find = Card::findOrFail($prev_card1);
-                    $prev_balance=$prev_card_find->getMemberBalance($member);
-                    $points=$points+$prev_balance;
+            
 
-                }
-                elseif($card_last_transaction['card_id']=='248616202493952'){
-                    $points = $card->getMemberBalance($member);
-                }
-                elseif($card_last_transaction['card_id']=='256023038738432'){
-                    $points = $card->getMemberBalance($member);
-                }
-                
+            
 
-
-        }
+            
         
-        
-
 
              $pending_points = Transaction::onlyTrashed()
              ->where('member_id', $member->id)
              ->where('created_by', $partner->id)
+             ->where('status','pending')
              ->sum('points');
 
             
