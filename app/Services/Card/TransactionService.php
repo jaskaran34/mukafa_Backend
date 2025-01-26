@@ -133,8 +133,9 @@ class TransactionService
         bool $points_only,
         string $created_at = null
         
-    ): Transaction {
+    ) {
 
+        
         $member = $this->memberService->findActiveByIdentifier($member_identifier);
         if($partner_id=='248216521760768'){
             //amount_member_spent_in_last_one_year
@@ -148,10 +149,10 @@ class TransactionService
 
         
 
-     if((int)$amount> 10000 and (int)$amount<50000) {
+     if($amount> 10000 and $amount<50000) {
              $card=Card::findOrFail('248384746274816');
      }   
-     else if((int)$amount> 50000 and (int)$amount<150000){
+     else if($amount> 50000 and $amount<150000){
          $card=Card::findOrFail('248616202493952');
      }
      else{
@@ -202,23 +203,27 @@ class TransactionService
             $data['purchase_amount'] = null;
             $purchase_amount_parsed = 0;
         } else {
+
+            
             // Parse $purchase_amount to an integer for database storage
             $currencies = new ISOCurrencies();
             $moneyParser = new DecimalMoneyParser($currencies);
             if($card->currency=='QAR'){
                 $purchase_amount_parsed = ($moneyParser->parse((string)$purchase_amount, new Currency($card->currency))->getAmount())/100;
+                
             }
             else {
                 $purchase_amount_parsed = $moneyParser->parse((string)$purchase_amount, new Currency($card->currency))->getAmount();
            
             }
-
+            
                     
             // Calculate points based on $purchase_amount
-            $points = $card->calculatePoints($purchase_amount);
+            $points = round($card->calculatePoints($purchase_amount),2);
+
 
             $number_of_points_issued = $points;
-            $data['purchase_amount'] = $purchase_amount_parsed;
+            $data['purchase_amount'] = round($purchase_amount_parsed,2);
         }
 
         // Check if this is first transaction and if bonus points are configured

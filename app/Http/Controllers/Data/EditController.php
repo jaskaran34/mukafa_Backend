@@ -65,6 +65,8 @@ class EditController extends Controller
         // Update the record with the provided form data
         $message = $dataService->updateRecord($id, $request, $form, $settings);
 
+        return $message;
+
         // Check if the message is an instance of Validator, indicating validation errors
         if ($message instanceof Validator) {
             // Redirect back to the edit form with input data and validation errors

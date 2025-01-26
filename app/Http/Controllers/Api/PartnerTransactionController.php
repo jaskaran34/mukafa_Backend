@@ -291,6 +291,8 @@ class PartnerTransactionController extends Controller
             false
         );
 
+        
+
         $tran=Transaction::findOrFail($transaction->id);        
         
         $tran->delete();

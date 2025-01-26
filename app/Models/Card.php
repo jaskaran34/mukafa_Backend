@@ -206,14 +206,19 @@ class Card extends Model implements HasMedia
      * @param float $purchaseAmount The amount of the purchase.
      * @return int The number of reward points the customer should receive.
      */
-    public function calculatePoints(float $purchaseAmount): int
+    public function calculatePoints(float $purchaseAmount)
     {
+        
         $round_points_up = $this->meta && is_array($this->meta) && isset($this->meta['round_points_up']) ? (bool) $this->meta['round_points_up'] : true;
-
+        
         // Calculate points based on purchase amount
         if ($round_points_up) {
             // Round up points calculation
-            $pointsValue = round(($purchaseAmount / $this->currency_unit_amount) * $this->points_per_currency);
+           
+           //--(1) $pointsValue = round(($purchaseAmount / $this->currency_unit_amount) * $this->points_per_currency);
+
+           $pointsValue = ($purchaseAmount / $this->currency_unit_amount) * $this->points_per_currency;
+        
         } else {
             // Without rounding, ensure integer value
             $pointsValue = floor(($purchaseAmount / $this->currency_unit_amount) * $this->points_per_currency);
@@ -229,6 +234,7 @@ class Card extends Model implements HasMedia
             $pointsValue = $this->max_points_per_purchase;
         }
 
+        
         // Return calculated points
         return $pointsValue;
     }
