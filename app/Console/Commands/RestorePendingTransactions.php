@@ -9,7 +9,7 @@ use App\Models\Transaction;
 use App\Models\Card;
 use App\Models\TransactionRefundSetting;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\File;
 class RestorePendingTransactions extends Command
 {
     /**
@@ -31,7 +31,9 @@ class RestorePendingTransactions extends Command
      */
     public function handle()
     {
-        
+        $currentTime = Carbon::now()->toDateTimeString();
+        $logMessage = "\nScheduler ran at: {$currentTime}\n";
+        File::append(public_path('scheduler_log.txt'), $logMessage);
 
        // $partners=Partner::all();
 
@@ -160,7 +162,8 @@ class RestorePendingTransactions extends Command
 
 
                
-    
+                    $t_id = "Transaction {$transaction->id}\n";
+                    File::append(public_path('scheduler_log.txt'), $t_id);
                     // Output the success message
                     $this->info("Transaction {$transaction->id} restored and status updated to completed.");
                 }

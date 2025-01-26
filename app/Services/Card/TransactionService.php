@@ -155,6 +155,9 @@ class TransactionService
      else if($amount> 50000 and $amount<150000){
          $card=Card::findOrFail('248616202493952');
      }
+     else if($amount>150000){
+        $card=Card::findOrFail('256023038738432');
+    }
      else{
          $card=Card::findOrFail('248378951208960');
      }
@@ -411,6 +414,7 @@ class TransactionService
 
     public function redeemReward(
         int $card_id, 
+        string $partner_id = null, 
         int $points, 
         string $member_identifier, 
         Staff $staff, 
@@ -437,12 +441,50 @@ class TransactionService
          * Updates a member's points balance based on transactions that haven't yet expired. 
          * This method iterates through all valid transactions and credits reward points.
          * Points are used from older transactions first (First-In-First-Out)
+         
+         
+          if ((int)$amount > 10000 && (int)$amount < 50000) {
+                            $newCardId = '248384746274816';
+                        } elseif ((int)$amount > 50000 && (int)$amount < 150000) {
+                            $newCardId = '248616202493952';
+                        } elseif ((int)$amount > 150000) {
+                            $newCardId = '256023038738432';
+                        } else {
+                            $newCardId = '248378951208960';
+                        }
+
+
          */
-        $transactions = Transaction::where('member_id', $member->id)
+
+         if($partner_id=='248216521760768'){
+
+            $cardIdMap = [
+                '248378951208960' => ['248378951208960'],
+                '248384746274816' => ['248378951208960', '248384746274816'],
+                '248616202493952' => ['248378951208960', '248384746274816', '248616202493952'],
+                '256023038738432' => ['248378951208960', '248384746274816', '248616202493952', '256023038738432'],
+            ];
+            
+            // Get the card IDs based on the card ID
+            $cardIds = $cardIdMap[$card->id] ?? [];
+            
+            // Fetch the transactions
+            $transactions = Transaction::where('member_id', $member->id)
+                ->whereIn('card_id', $cardIds)
+                ->where('expires_at', '>', Carbon::now())
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+         }
+         else
+         {
+        
+            $transactions = Transaction::where('member_id', $member->id)
             ->where('card_id', $card->id)
             ->where('expires_at', '>', Carbon::now())
             ->orderBy('created_at', 'asc')
             ->get();
+         }
 
         $remainingRewardPoints = $points;
 
@@ -492,8 +534,8 @@ class TransactionService
             'min_points_per_purchase' => $card->min_points_per_purchase,
             'max_points_per_purchase' => $card->max_points_per_purchase,
             'created_by' => $partner->id,
-            'created_at' => $created_at ?? Carbon::now('UTC'),
-            'updated_at' => $created_at ?? Carbon::now('UTC'),
+            'created_at' => $created_at ?? Carbon::now(),
+            'updated_at' => $created_at ?? Carbon::now(),
         ];
 
         // Create a new transaction record

@@ -18,7 +18,7 @@ use Money\Currencies\ISOCurrencies;
 use Money\Formatter\IntlMoneyFormatter;
 use Money\Currency;
 use Money\Parser\DecimalMoneyParser;
-
+use Illuminate\Support\Facades\Log;
 /**
  * Class Card
  *
@@ -248,31 +248,25 @@ class Card extends Model implements HasMedia
      * @param Member|null $member The member whose balance should be retrieved. Defaults to null.
      * @return int The balance of the member.
      */
-    public function getMemberBalance(?Member $member): int
-    {
+    public function getMemberBalance(?Member $member) {
         // Determine the member_id to use for the balance calculation.
-        // If a member is provided, use its id. If not, check if a member is authenticated and use their id. 
-        $memberId = $member 
-            ? $member->id 
-            : auth('member')->id();
-
+        $memberId = $member ? $member->id : auth('member')->id();
+    
         // Calculate the balance if a member id was found.
-        // If not, set balance to 0.
         $balance = 0;
         if ($memberId) {
             $balance = Transaction::where('member_id', $memberId)
                 ->where('card_id', $this->id)
                 ->where('expires_at', '>', Carbon::now())
-                ->select(DB::raw('SUM(points - points_used) as balance'))
+                ->select(DB::raw('ROUND(SUM(points - points_used), 2) as balance'))
                 ->pluck('balance')
                 ->first();
-
             $balance = $balance ?? 0;
         }
-
-        return $balance;
+    //Log::info($balance);
+        // Format the balance to 2 decimal places and cast to float.
+        return (float) number_format($balance, 2, '.', '');
     }
-
     /**
      * Get the balance attribute for a card related to the authenticated member.
      *

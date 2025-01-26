@@ -146,6 +146,7 @@ class PartnerTransactionController extends Controller
 
                     if($card_last_transaction['card_id']=='248378951208960'){
                         $points = $card->getMemberBalance($member);
+
                     }
                     elseif($card_last_transaction['card_id']=='248384746274816'){
                         
@@ -192,7 +193,7 @@ class PartnerTransactionController extends Controller
                         
                     }
 
-                    return $points;
+                    return number_format($points, 2, '.', '');
 
      }
      public function allmembers(Request $request)
@@ -230,7 +231,7 @@ class PartnerTransactionController extends Controller
                  $member->hideForPublic();
                  $member->partner_id=$partner->id;
                  if($member->partner_id=='248216521760768'){
-                $member->balance=$this->get_balance($member->partner_id,$member); 
+                  $member->balance=$this->get_balance($member->partner_id,$member); 
                 }
                 else{
                     $member->balance = Card::find($memberCardMap[$member->id])->getMemberBalance($member) ?? null;
@@ -695,6 +696,7 @@ $card=$CardService->findActiveCardByIdentifier($cardUID);
 
 $transaction = $transactionService->redeemReward(
     $card->id, 
+    $partner->id,
     $validatedData['points'], 
     $memberUID, 
     $staff,  

@@ -11,3 +11,5 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('install')->dailyAt('04:45')->when(function () {
     return env('APP_DEMO', false);
 })->description('Refresh demo data daily');
+
+
