@@ -17,6 +17,7 @@ use Money\Parser\DecimalMoneyParser;
 use Carbon\Carbon;
 use App\Notifications\Member\RewardClaimed;
 use App\Notifications\Member\PointsReceived;
+use App\Models\Settlement;
 
 /**
  * Class TransactionService
@@ -226,6 +227,22 @@ class TransactionService
 
 
             $number_of_points_issued = $points;
+
+
+            $get_settlement_rate=Settlement::where('partner_id', $partner->id)->firstOrFail();
+
+            //echo $number_of_points_issued;exit;
+          //  $cut=$get_settlement_rate->percentage;
+
+            $cut = round(($get_settlement_rate->percentage / 100) * $number_of_points_issued, 2);
+
+            
+            $number_of_points_issued=$number_of_points_issued-$cut;
+            $points=$number_of_points_issued;
+            
+
+
+
             $data['purchase_amount'] = round($purchase_amount_parsed,2);
         }
 
@@ -252,17 +269,45 @@ class TransactionService
             $created_at->addSecond();
         }
 
+        
         // Prepare data for new transaction record
         $purchaseData = array_merge($data, [
             'points' => $points,
             'event' => $points_only ? 'staff_credited_points' : 'staff_credited_points_for_purchase',
             'note' => $note,
+            'remarks'=> 'Points Issued',
             'created_at' => $created_at,
             'updated_at' => $created_at,
         ]);
 
         // Create a new transaction record
         $transaction = Transaction::create($purchaseData);
+
+         // Add a second to the created_at timestamp for sorting purposes
+         if (!$created_at instanceof Carbon) {
+            $created_at = Carbon::parse($created_at);
+        }
+        $created_at->addSecond();
+
+
+        if($cut>0){
+
+            $cutData = array_merge($data, [
+                'points' => ($cut * -1),
+                'event' => 'mukafa',
+                'note' =>  $transaction->id,
+                'remarks'=> 'Processing Fee',
+                'created_at' => $created_at,
+                'updated_at' => $created_at,
+            ]);
+
+            $cutData['purchase_amount']=0;
+
+            $transaction_cut = Transaction::create($cutData);
+
+            $transaction_cut->delete();
+    }
+
 
         // Attach image if present
         if ($image) {

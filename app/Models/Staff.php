@@ -53,7 +53,6 @@ class Staff extends Authenticatable implements HasLocalePreference, HasMedia
     protected $hiddenForPublic = [
         'role',
         'display_name',
-        'unique_identifier',
         'email_verified_at',
         'password',
         'remember_token',

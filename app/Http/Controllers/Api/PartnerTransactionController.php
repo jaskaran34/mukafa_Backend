@@ -12,6 +12,7 @@ use App\Services\Staff\StaffService;
 use App\Services\Card\CardService;
 use App\Models\Member;
 use App\Models\Card;
+use App\Models\Settlement;
 
 use Carbon\Carbon;
 use App\Models\Transaction;
@@ -279,6 +280,9 @@ class PartnerTransactionController extends Controller
         }
 
         
+
+        
+        
         // Create the new purchase
         $transaction = $transactionService->addPurchase(
             $memberUID,
@@ -292,7 +296,7 @@ class PartnerTransactionController extends Controller
             false
         );
 
-        
+        //return response()->json($transaction); 
 
         $tran=Transaction::findOrFail($transaction->id);        
         
@@ -901,8 +905,9 @@ return $transaction;
             ->where('created_by', $partner->id)
             ->orderBy('created_at', 'desc')
             ->take(10)
-            ->select('id', 'created_at', 'purchase_amount', 'note', 'staff_id', 'card_id','event','status')
+            ->select('id', 'created_at', 'purchase_amount', 'note', 'staff_id', 'card_id','event','status','remarks')
             ->selectRaw('ABS(points) as points')
+            ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
             ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
             ->selectRaw('
                 CASE 
@@ -914,7 +919,7 @@ return $transaction;
 ')
             ->with([
                 'staff' => function ($query) {
-                    $query->select('id', 'name', 'email');
+                    $query->select('id', 'name', 'email','unique_identifier');
                 },
                 'card' => function ($query) {
                     $query->select('id', 'name');
