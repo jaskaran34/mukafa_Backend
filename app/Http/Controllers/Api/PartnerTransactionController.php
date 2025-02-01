@@ -16,9 +16,28 @@ use App\Models\Settlement;
 
 use Carbon\Carbon;
 use App\Models\Transaction;
+use Twilio\Rest\Client;
 
 class PartnerTransactionController extends Controller
 {
+
+    public function send_sms()
+    {
+        $receiverNumber = '+917889481714'; 
+        $message = 'Hello, this is a test SMS from my Laravel app using Twilio!';
+
+        try {
+            $twilio = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
+            $twilio->messages->create($receiverNumber, [
+                'from' => env('TWILIO_PHONE_NUMBER'),
+                'body' => $message
+            ]);
+
+            return response()->json(['status' => 'Message sent successfully!']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'Error: ' . $e->getMessage()]);
+        }
+    }
     /**
      * Add a purchase transaction to a card where the authenticated partner has access to.
      *
@@ -307,7 +326,7 @@ class PartnerTransactionController extends Controller
             ->where('id', $transaction->id)
             ->select('id', 'created_at', 'note','status')
             ->selectRaw('ABS(points) as points')
-            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
             ->selectRaw('
                 CASE 
                     WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
@@ -433,15 +452,12 @@ class PartnerTransactionController extends Controller
 
         
 
-        if($partner){
-
             $query = Transaction::withTrashed()
         ->where('created_by', $partner->id)
         ->orderBy('created_at', 'desc')
-        ->select('id', 'created_at', 'purchase_amount', 'note', 'member_id', 'card_id', 'staff_id', 'deleted_at','status')
+        ->select('id', 'created_at', 'purchase_amount', 'note', 'member_id', 'card_id', 'staff_id', 'deleted_at','status','remarks')
         ->selectRaw('ABS(points) as points')
         ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
-        ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
         ->selectRaw('
                 CASE 
                     WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
@@ -458,106 +474,56 @@ class PartnerTransactionController extends Controller
                 $query->select('id', 'name');
             },
             'member' => function ($query) {
-                $query->select('id', 'unique_identifier', 'email','phone');
+                $query->select('id', 'unique_identifier', 'email','phone','name');
             }
         ]);
 
-        }
-        elseif($admin){
-            $query = Transaction::withTrashed()
-        ->orderBy('created_at', 'desc')
-        ->select('id', 'created_at', 'purchase_amount', 'note','created_by', 'member_id', 'card_id', 'staff_id', 'deleted_at','status')
-        ->selectRaw('ABS(points) as points')
-        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
-        ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
-        ->selectRaw('
-                CASE 
-                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
-                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
-                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
-                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
-                END as status
-')
-        ->with([
-            'staff' => function ($query) {
-                $query->select('id', 'name', 'email');
-            },
-            'getpartner' => function ($query) {
-                $query->select('id', 'name', 'email'); 
-            },
-            'card' => function ($query) {
-                $query->select('id', 'name');
-            },
-            'member' => function ($query) {
-                $query->select('id', 'unique_identifier', 'email','phone');
-            }
-        ]);
-        }
-        elseif($member){
-
-            $query = Transaction::withTrashed()
-        ->where('member_id', $member->id)
-        ->orderBy('created_at', 'desc')
-        ->select('id', 'created_at', 'purchase_amount', 'note', 'member_id', 'card_id', 'staff_id', 'deleted_at','status')
-        ->selectRaw('ABS(points) as points')
-        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
-        ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
-        ->selectRaw('
-                CASE 
-                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
-                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
-                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
-                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
-                END as status
-')
-        ->with([
-            'staff' => function ($query) {
-                $query->select('id', 'name', 'email');
-            },
-            'card' => function ($query) {
-                $query->select('id', 'name');
-            },
-            'member' => function ($query) {
-                $query->select('id', 'unique_identifier', 'email','phone');
-            }
-        ]);
-        }
-        
-         
-        
-
-    if($request->get('id')){
-        $query->where('id', 'like', '%' . $request->get('id') . '%');
-    }
-
-    if ($request->get('from_date')) {
-        $query->whereDate('created_at', '>=', $request->get('from_date'));
-    }
-    
-    if ($request->get('to_date')) {
-        $query->whereDate('created_at', '<=', $request->get('to_date'));
-    }
-
-    if($request->get('note')){
-        $query->where('note', 'like', '%' . $request->get('note') . '%');
-    }
-    
 
     switch ($request->get('status')) {
             case 'success':
-                $query->where('status','completed');
+                $query->where('status','completed')
+                ->where(function ($query) {
+                    $query->where('remarks', '!=', 'Settlement')
+                          ->orWhereNull('remarks');
+                })
+                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
+                //->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+                //->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
+        
                 break;
 
             case 'cancelled':
-                $query->where('status','cancelled');
+                $query->where('status','cancelled')
+                ->where(function ($query) {
+                    $query->where('remarks', '!=', 'Settlement')
+                          ->orWhereNull('remarks');
+                })
+                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
+                
+                break;
+
                 //$query->whereIn('status', ['cancelled', 'refunded']);
                 break;
             case 'pending':
-                $query->where('status','pending');
+                $query->where('status','pending')
+                ->where(function ($query) {
+                    $query->where('remarks', '!=', 'Settlement')
+                          ->orWhereNull('remarks');
+                })
+                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
                 break;
             case 'refunded':
-                $query->where('status','refunded');
-                break;        
+                $query->where('status','refunded')
+                ->where(function ($query) {
+                    $query->where('remarks', '!=', 'Settlement')
+                          ->orWhereNull('remarks');
+                })
+                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
+                break;
+            case 'Settlement' :
+                $query->where('remarks','Settlement')
+                ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Debit", "Credit")) as type');
+                break;           
 
             default:
                 break;
@@ -712,7 +678,7 @@ $data = Transaction::withTrashed()
             ->where('id', $transaction->id)
             ->select('id', 'created_at', 'note','status')
             ->selectRaw('ABS(points) as points')
-            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
             ->selectRaw('
                 CASE 
                     WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
@@ -907,8 +873,14 @@ return $transaction;
             ->take(10)
             ->select('id', 'created_at', 'purchase_amount', 'note', 'staff_id', 'card_id','event','status','remarks')
             ->selectRaw('ABS(points) as points')
-            ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
-            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')            
+            ->where(function ($query) {
+                $query->where('remarks', '!=', 'Settlement')
+                      ->orWhereNull('remarks');
+            })
+            ->selectRaw('IF(points > 0, "Debit", "Credit") as type')
+            //->selectRaw('IF(points > 0, "Credit", "Debit") as type')
+            //->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
             ->selectRaw('
                 CASE 
                     WHEN deleted_at IS NULL AND status = "completed" THEN "completed"

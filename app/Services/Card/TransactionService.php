@@ -229,16 +229,22 @@ class TransactionService
             $number_of_points_issued = $points;
 
 
-            $get_settlement_rate=Settlement::where('partner_id', $partner->id)->firstOrFail();
+            $get_settlement_rate=Settlement::where('partner_id', $partner->id)->where('type', 'issue')->firstOrFail();
 
+            if($get_settlement_rate->percentage > 0){
+            // define logic here
+            /*
+            $cut = round(($get_settlement_rate->percentage / 100) * $number_of_points_issued, 2);
+            $number_of_points_issued=$number_of_points_issued-$cut;
+            $points=$number_of_points_issued;    
+
+            */
+        }
             //echo $number_of_points_issued;exit;
           //  $cut=$get_settlement_rate->percentage;
 
-            $cut = round(($get_settlement_rate->percentage / 100) * $number_of_points_issued, 2);
-
             
-            $number_of_points_issued=$number_of_points_issued-$cut;
-            $points=$number_of_points_issued;
+            
             
 
 
@@ -275,7 +281,7 @@ class TransactionService
             'points' => $points,
             'event' => $points_only ? 'staff_credited_points' : 'staff_credited_points_for_purchase',
             'note' => $note,
-            'remarks'=> 'Points Issued',
+            'remarks'=> 'Issue',
             'created_at' => $created_at,
             'updated_at' => $created_at,
         ]);
@@ -290,8 +296,8 @@ class TransactionService
         $created_at->addSecond();
 
 
-        if($cut>0){
-
+        if(isset($cut) && $cut>0){
+/*
             $cutData = array_merge($data, [
                 'points' => ($cut * -1),
                 'event' => 'mukafa',
@@ -306,7 +312,8 @@ class TransactionService
             $transaction_cut = Transaction::create($cutData);
 
             $transaction_cut->delete();
-    }
+  */
+            }
 
 
         // Attach image if present
@@ -578,6 +585,7 @@ class TransactionService
             'points_per_currency' => $card->points_per_currency,
             'min_points_per_purchase' => $card->min_points_per_purchase,
             'max_points_per_purchase' => $card->max_points_per_purchase,
+            'remarks'=> 'Redeem',
             'created_by' => $partner->id,
             'created_at' => $created_at ?? Carbon::now(),
             'updated_at' => $created_at ?? Carbon::now(),
@@ -585,6 +593,32 @@ class TransactionService
 
         // Create a new transaction record
         $transaction = Transaction::create($data);
+
+        $settlement_data=$data;
+
+        $get_settlement_rate=Settlement::where('partner_id', $partner->id)->where('type', 'redeem')->firstOrFail();
+
+        if($get_settlement_rate->percentage > 0){
+            if (!$created_at instanceof Carbon) {
+                $created_at = Carbon::parse($created_at);
+            }
+            $created_at->addSecond();
+
+            $settlement_points = ($points * $get_settlement_rate->percentage) / 100;
+
+           $settlement_data['points']=$settlement_points;
+           $settlement_data['note']=$transaction->id;
+           $settlement_data['remarks']='Settlement';
+           $settlement_data['created_at']=$created_at;
+           $settlement_data['updated_at']=$created_at;
+           $settlement_data['status']='completed';
+
+           $add_transaction= Transaction::create($settlement_data);
+          
+
+            }
+
+        //$settlement_data['points']=
 
         // Attach image if present
         if ($image) {

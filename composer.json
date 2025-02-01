@@ -19,7 +19,8 @@
         "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-markdown": "^2.5",
         "spatie/laravel-medialibrary": "^11.6",
-        "spatie/laravel-translatable": "^6.7"
+        "spatie/laravel-translatable": "^6.7",
+        "twilio/sdk": "^8.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

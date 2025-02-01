@@ -60,6 +60,8 @@ Route::prefix('{locale}/v1')->group(function () {
             Route::get('transaction/member/{memberUID}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'gettransactions']);
             Route::get('transactions', [App\Http\Controllers\Api\PartnerTransactionController::class, 'alltransactions']);
             Route::delete('transactions/{tran_id}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'cancel_transaction']);
+
+            Route::get('/send-sms', [App\Http\Controllers\Api\PartnerTransactionController::class, 'send_sms']);
        
 
             Route::post('register', [App\Http\Controllers\Api\MemberAuthController::class, 'register']);

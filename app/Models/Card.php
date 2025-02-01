@@ -256,11 +256,16 @@ class Card extends Model implements HasMedia
         $balance = 0;
         if ($memberId) {
             $balance = Transaction::where('member_id', $memberId)
-                ->where('card_id', $this->id)
-                ->where('expires_at', '>', Carbon::now())
-                ->select(DB::raw('ROUND(SUM(points - points_used), 2) as balance'))
-                ->pluck('balance')
-                ->first();
+            ->where('card_id', $this->id)
+            ->where('expires_at', '>', Carbon::now())
+            ->where('status', 'completed')
+            ->where(function ($query) {
+                $query->where('remarks', '!=', 'Settlement')
+                      ->orWhereNull('remarks');
+            })
+            ->select(DB::raw('ROUND(SUM(points - points_used), 2) as balance'))
+            ->pluck('balance')
+            ->first();
             $balance = $balance ?? 0;
         }
     //Log::info($balance);
