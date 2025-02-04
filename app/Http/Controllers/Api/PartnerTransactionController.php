@@ -221,50 +221,87 @@ class PartnerTransactionController extends Controller
          $partner = $request->user('partner_api');
          $cardIds = $partner->cards->pluck('id');
      
+         $per_page = $request->per_page ?? 10;
+     
          if ($cardIds->isEmpty()) {
-             return response()->json([], 200); // No cards, return empty array
+             return response()->json([], 200);
          }
      
-         // Step 1: Get unique member IDs linked to the partner's cards
-         $memberIds = Transaction::whereIn('card_id', $cardIds)
-             ->distinct()
-             ->pluck('member_id');
-     
-         // Step 2: Get the most recent transaction for each member
-         $recentTransactions = Transaction::whereIn('member_id', $memberIds)
+         // Step 1: Fetch latest transaction per member and paginate directly
+         $recentTransactions = Transaction::whereIn('card_id', $cardIds)
              ->select('member_id', 'card_id')
              ->orderBy('created_at', 'desc')
-             ->get()
-             ->unique('member_id'); // Get the latest transaction for each member
+             ->distinct('member_id') // This ensures each member appears only once
+             ->paginate($per_page);
+     
+         // Extract member IDs
+         $memberIds = $recentTransactions->pluck('member_id')->toArray();
      
          // Map member_id => card_id
          $memberCardMap = $recentTransactions->pluck('card_id', 'member_id');
      
-         // Step 3: Fetch members and attach their most recent card_id
+         // Step 2: Fetch only paginated members
          $members = Member::whereIn('id', $memberIds)
              ->orderBy('created_at', 'desc')
-             ->get()
-             ->each(function ($member) use ($memberCardMap,$partner) {
-                $member->createddate = Carbon::parse($member->created_at)->format('d-m-Y');
-                 $member->card_uid = Card::find($memberCardMap[$member->id])->unique_identifier ?? null; // Add card_id to each member
-                 $member->card_name = Card::find($memberCardMap[$member->id])->name ?? null;
-                 $member->hideForPublic();
-                 $member->partner_id=$partner->id;
-                 if($member->partner_id=='248216521760768'){
-                  $member->balance=$this->get_balance($member->partner_id,$member); 
-                }
-                else{
-                    $member->balance = Card::find($memberCardMap[$member->id])->getMemberBalance($member) ?? null;
-                }
-                $member->balance_pending = Transaction::withTrashed()->where('status','pending')->where('card_id', $memberCardMap[$member->id])
-                 ->where('member_id', $member->id)
-                 ->where('status', 'pending')
-                 ->whereNotNull('deleted_at') // Proper syntax for checking non-null values
-                 ->sum('points');
-             });
+             ->get(); // No pagination here, as IDs are already paginated
      
-         return response()->json($members);
+         // Processing members
+         $members->each(function ($member) use ($memberCardMap, $partner) {
+             $member->createddate = Carbon::parse($member->created_at)->format('d-m-Y');
+             $member->card_uid = Card::find($memberCardMap[$member->id])->unique_identifier ?? null;
+             $member->card_name = Card::find($memberCardMap[$member->id])->name ?? null;
+             $member->hideForPublic();
+             $member->partner_id = $partner->id;
+     
+             if ($member->partner_id == '248216521760768') {
+                 $member->balance = $this->get_balance($member->partner_id, $member);
+             } else {
+                 $member->balance = Card::find($memberCardMap[$member->id])->getMemberBalance($member) ?? null;
+             }
+     
+             $member->balance_pending = Transaction::withTrashed()
+                 ->where('status', 'pending')
+                 ->where('card_id', $memberCardMap[$member->id])
+                 ->where('member_id', $member->id)
+                 ->whereNotNull('deleted_at')
+                 ->sum('points');
+         });
+     
+         // Format response data
+         $data_member = $members->map(function ($member) {
+             return [
+                 "mukafa_number" => $member->unique_identifier,
+                 "name" => $member->name,
+                 "email" => $member->email,
+                 "phone_prefix" => $member->phone_prefix,
+                 "phone" => $member->phone,
+                 "birthday" => $member->birthday,
+                 "date_of_registeration" => $member->created_at,
+                 "last_updated" => $member->updated_at,
+                 "anniversary_date" => $member->anniversary_date,
+                 "createddate" => $member->createddate,
+                 "card_uid" => $member->card_uid,
+                 "card_name" => $member->card_name,
+                 "partner_id" => $member->partner_id,
+                 "balance" => $member->balance,
+                 "balance_pending" => $member->balance_pending
+             ];
+         });
+     
+         // Response with pagination
+         return response()->json([
+             'data' => $data_member,
+             'pagination' => [
+                 'total' => $recentTransactions->total(),
+                 'per_page' => $recentTransactions->perPage(),
+                 'current_page' => $recentTransactions->currentPage(),
+                 'last_page' => $recentTransactions->lastPage(),
+                 'next_page_url' => $recentTransactions->nextPageUrl(),
+                 'prev_page_url' => $recentTransactions->previousPageUrl()
+             ]
+         ]);
      }
+     
      
     public function addPurchase(
         string $locale,
@@ -442,102 +479,122 @@ class PartnerTransactionController extends Controller
      * @return Response JSON response containing transaction details or error message
      */
 
-     public function alltransactions(string $locale,Request $request){
-         
-        $perPage = $request->get('per_page', 10);
- 
-        $partner = $request->user('partner_api');
-        $admin = $request->user('admin_api');
-        $member = $request->user('member_api');
-
+     public function alltransactions(string $locale, Request $request)
+     {
+         $perPage = $request->get('per_page', 10);
+     
+         $partner = $request->user('partner_api');
+     
+         $query = Transaction::withTrashed()
+             ->where('created_by', $partner->id)
+             ->orderBy('created_at', 'desc')
+             ->selectRaw('
+                 id, created_at, purchase_amount, note, member_id, card_id, staff_id, deleted_at, status, remarks,
+                 ABS(points) as points,
+                 DATE_FORMAT(created_at, "%d-%m-%Y") as created_date
+             ')
+             ->with([
+                 'staff:id,name,email',
+                 'card:id,name,unique_identifier',
+                 'member:id,unique_identifier,email,phone,name'
+             ]);
+     
+         // **Filters**
+         if ($request->filled('id')) {
+             $query->where('id', 'like', '%' . $request->get('id') . '%');
+         }
+         if ($request->filled('from_date')) {
+             $query->whereDate('created_at', '>=', $request->get('from_date'));
+         }
+         if ($request->filled('to_date')) {
+             $query->whereDate('created_at', '<=', $request->get('to_date'));
+         }
+         if ($request->filled('note')) {
+             $query->where('note', 'like', '%' . $request->get('note') . '%');
+         }
+     
+       
+            switch ($request->get('status')) {
+                case 'success':
+                case 'cancelled':
+                case 'pending':
+                case 'refunded':
+                    $query->where('status', $request->get('status'))
+                        ->where(function ($q) {
+                            $q->where('remarks', '!=', 'Settlement')
+                              ->orWhereNull('remarks');
+                        })
+                        ->selectRaw('IF(points > 0, "Credit", "Debit") as type');
+                    break;
         
-
-            $query = Transaction::withTrashed()
-        ->where('created_by', $partner->id)
-        ->orderBy('created_at', 'desc')
-        ->select('id', 'created_at', 'purchase_amount', 'note', 'member_id', 'card_id', 'staff_id', 'deleted_at','status','remarks')
-        ->selectRaw('ABS(points) as points')
-        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
-        ->selectRaw('
-                CASE 
-                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
-                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
-                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
-                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
-                END as status
-')
-        ->with([
-            'staff' => function ($query) {
-                $query->select('id', 'name', 'email');
-            },
-            'card' => function ($query) {
-                $query->select('id', 'name');
-            },
-            'member' => function ($query) {
-                $query->select('id', 'unique_identifier', 'email','phone','name');
+                case 'Settlement':
+                    $query->where('remarks', 'Settlement')
+                        ->selectRaw('"Settlement" as type') // ✅ Always "Settlement" type for settlement transactions
+                        ->selectRaw('
+                            (SELECT IF(points > 0, "Debit", "Credit") 
+                             FROM transactions AS main 
+                             WHERE main.id = transactions.note 
+                             LIMIT 1) AS main_transaction_type
+                        ')
+                        ->selectRaw('
+                            (SELECT ABS(points) 
+                             FROM transactions AS main 
+                             WHERE main.id = transactions.note 
+                             LIMIT 1) AS main_transaction_points
+                        ')
+                        ->selectRaw('
+                            (SELECT note 
+                             FROM transactions AS main 
+                             WHERE main.id = transactions.note 
+                             LIMIT 1) AS main_transaction_note
+                        ');
+                    break;
+        
+                default:
+                        $query->where('remarks', '!=', 'Settlement')         
+                        ->selectRaw('IF(points > 0, "Credit", "Debit") as type');
+                    break;
             }
-        ]);
-
-
-    switch ($request->get('status')) {
-            case 'success':
-                $query->where('status','completed')
-                ->where(function ($query) {
-                    $query->where('remarks', '!=', 'Settlement')
-                          ->orWhereNull('remarks');
-                })
-                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
-                //->selectRaw('IF(points > 0, "Credit", "Debit") as type')
-                //->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
-        
-                break;
-
-            case 'cancelled':
-                $query->where('status','cancelled')
-                ->where(function ($query) {
-                    $query->where('remarks', '!=', 'Settlement')
-                          ->orWhereNull('remarks');
-                })
-                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
-                
-                break;
-
-                //$query->whereIn('status', ['cancelled', 'refunded']);
-                break;
-            case 'pending':
-                $query->where('status','pending')
-                ->where(function ($query) {
-                    $query->where('remarks', '!=', 'Settlement')
-                          ->orWhereNull('remarks');
-                })
-                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
-                break;
-            case 'refunded':
-                $query->where('status','refunded')
-                ->where(function ($query) {
-                    $query->where('remarks', '!=', 'Settlement')
-                          ->orWhereNull('remarks');
-                })
-                ->selectRaw('IF(points > 0, "Debit", "Credit") as type');
-                break;
-            case 'Settlement' :
-                $query->where('remarks','Settlement')
-                ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Debit", "Credit")) as type');
-                break;           
-
-            default:
-                break;
-    }
-
-
-// Paginate the results
-  $data = $query->paginate($perPage)->appends($request->except('page'));
-
+       
 
         
-            return response()->json($data);
-        
+         $data = $query->paginate($perPage)->appends($request->query());
+
+        // return response()->json($data);
+     
+         // **Transform and Return Data**
+         return response()->json([
+             'current_page' => $data->currentPage(),
+             'data' => $data->map(function ($item) {
+                 return [
+                     'id' => $item->id,
+                     'created_at' => $item->created_at,
+                     'order_id' => $item->note,
+                     'purchase_amount' => $item->purchase_amount ?? null,
+                     'mukafa_points' => $item->points,
+                     'member_name' => $item->member->name ?? null,
+                     'mukafa_number' => $item->member->unique_identifier ?? null,
+                     'card_name' => $item->card->name ?? null,
+                     'cardUID' => $item->card->unique_identifier ?? null,
+                     'status' => $item->status,
+                     'remarks' => $item->remarks ?? null,
+                     'created_date' => $item->created_date,
+                     'type' => $item->type,
+                 ];
+             }),
+             'first_page_url' => $data->url(1),
+             'from' => $data->firstItem() ?? 0,
+             'last_page' => $data->lastPage(),
+             'last_page_url' => $data->url($data->lastPage()),
+             'next_page_url' => $data->nextPageUrl(),
+             'prev_page_url' => $data->previousPageUrl(),
+             'per_page' => $data->perPage(),
+             'to' => $data->lastItem() ?? 0,
+             'total' => $data->total() ?? 0
+         ]);
      }
+     
+
      public function cancel_transaction(string $locale,$tran_id, Request $request,TransactionService $transactionService,
      StaffService $staffService){
 
@@ -619,13 +676,25 @@ class PartnerTransactionController extends Controller
              if($partner->currency=='QAR'){
                 $amount=((int)$points)/100;
              }
-           
+            
+             $data_member=[
+        "mukafa_number"=> $member->unique_identifier,
+        "name"=> $member->name,
+        "email"=> $member->email,
+        "birthday"=> $member->birthday,
+        "phone_prefix"=> $member->phone_prefix,
+        "phone"=> $member->phone,
+        "date_of_registeration"=> $member->created_at,
+        "last_updated"=> $member->updated_at,
+        "anniversary_date" =>$member->anniversary_date,
+        
+             ];
+
             return response()->json([
-                'member' => $member,
-                'points'=>$points,
+                'member' => $data_member,
+                'balance'=>$points,
                 'amount'=>$amount,
                 'currency'=>$partner->currency,
-                'card_id'=>$card->id,
                 'cardUID'=>$card->unique_identifier,
                 'card_name'=>$card->name,
                 'pending_points'=>$pending_points
@@ -878,7 +947,7 @@ return $transaction;
                 $query->where('remarks', '!=', 'Settlement')
                       ->orWhereNull('remarks');
             })
-            ->selectRaw('IF(points > 0, "Debit", "Credit") as type')
+            ->selectRaw('IF(points > 0, "Credit", "Debit") as type')
             //->selectRaw('IF(points > 0, "Credit", "Debit") as type')
             //->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
             ->selectRaw('
@@ -894,15 +963,37 @@ return $transaction;
                     $query->select('id', 'name', 'email','unique_identifier');
                 },
                 'card' => function ($query) {
-                    $query->select('id', 'name');
+                    $query->select('id', 'name','unique_identifier');
                 },
             ])
             ->get();
 
 
-       
+
+            
+            $data_send=[];
 
 
-        return response()->json(['data' => $data], 200);
+            foreach($data as $dt){
+                $arr_send=[
+                    'id'=>$dt->id,
+                    'created_at'=>$dt->created_at,
+                    'order_id'=>$dt->note,
+                    'mukafa_number'=>$memberUID,
+                    'purchase_amount'=>$dt->purchase_amount,
+                    'mukafa_points'=>$dt->points,
+                    'card_name'=>$dt->card->name,
+                    'cardUID'=>$dt->card->unique_identifier,
+                    'status'=>$dt->status,
+                    'remarks'=>$dt->remarks,
+                    'created_date'=>$dt->created_date,
+                    'type'=>$dt->type,
+                    'partner'=>$partner->id,
+                ];
+                array_push($data_send,$arr_send);
+            }
+    
+
+        return response()->json(['data' => $data_send], 200);
      }
 }

@@ -186,6 +186,18 @@ class PartnerAuthController extends Controller
         // Hide sensitive information before exposing data
         $partner->hideForPublic();
 
-        return response()->json($partner, 200);
+        $data_partner=[
+            'id'=> $partner->id,
+            'name'=> $partner->name,
+            'email'=> $partner->email,
+            'phone_prefix'=> $partner->phone_prefix,
+
+            'phone'=> $partner->phone,
+            'created_at'=> $partner->created_at,
+            'last_updated'=> $partner->updated_at,
+            'avatar'=> $partner->avatar,
+        ];
+
+        return response()->json($data_partner, 200);
     }
 }

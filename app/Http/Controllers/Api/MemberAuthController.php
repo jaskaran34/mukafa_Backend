@@ -118,7 +118,7 @@ class MemberAuthController extends Controller
         // Validate request inputs
         $request->validate([
             'email' => 'required|email|max:96|unique:members',
-            'phone' => ['required', 'regex:/^[0-9]{10}$/', 'unique:members'],
+            'phone' => ['required', 'regex:/^[0-9]{8,10}$/', 'unique:members'],
             'phone_prefix'=>'required|min:2|max:4',
             'name' => 'required|max:64',
             'password' => 'nullable|min:6|max:48',
