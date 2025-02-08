@@ -69,7 +69,10 @@ class RestorePendingTransactions extends Command
 
                
                 // If the time difference is greater than 3600 seconds (1 hour)
-                if ($timeDifference > (int) $TransactionRefundSetting->return_time) {
+               
+               // if ($timeDifference > (int) $TransactionRefundSetting->return_time) {
+
+                    if ($timeDifference > 36000) {
                     // Restore the transaction and update the status to completed
                     $transaction->restore();
                     $transaction->status = 'completed';

@@ -652,7 +652,7 @@ class TransactionService
     public function refund(
         string $remarks,
         int $card_id, 
-        int $points, 
+        float $points, 
         string $member_identifier, 
         Staff $staff, 
         string $image = null, 
@@ -689,8 +689,9 @@ class TransactionService
             'card_title' => $card->getTranslations('head'),
             'reward_title' => 'redeem9001',
             'reward_points' => $points,
-            'status'=>'refunded',
+            'status'=>'completed',
             'remarks'=> $remarks,
+            'cancel_flag'=>'R',
             'currency' => $card->currency,
             'event' => 'staff_redeemed_points_for_reward',
             'points' => -$points,
@@ -699,9 +700,9 @@ class TransactionService
             'min_points_per_purchase' => $card->min_points_per_purchase,
             'max_points_per_purchase' => $card->max_points_per_purchase,
             'created_by' => $partner->id,
-            'created_at' => $created_at ?? Carbon::now('UTC'),
-            'updated_at' => $created_at ?? Carbon::now('UTC'),
-            'deleted_at' => $created_at ?? Carbon::now('UTC'),
+            'created_at' => $created_at ?? Carbon::now(),
+            'updated_at' => $created_at ?? Carbon::now(),
+            'expires_at'=> Carbon::now()->addYear()
         ];
 
         // Create a new transaction record

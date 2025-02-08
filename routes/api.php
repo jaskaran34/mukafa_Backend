@@ -64,12 +64,15 @@ Route::prefix('{locale}/v1')->group(function () {
             Route::get('/send-sms', [App\Http\Controllers\Api\PartnerTransactionController::class, 'send_sms']);
        
 
-            Route::post('register', [App\Http\Controllers\Api\MemberAuthController::class, 'register']);
+            Route::post('register', [App\Http\Controllers\Api\PartnerTransactionController::class, 'register']);
+       
+            Route::get('otp/{otp}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'send_otp']);
+           
         });
     });
     Route::prefix('member')->group(function () {
         Route::post('login', [App\Http\Controllers\Api\MemberAuthController::class, 'login']);
-        Route::post('register', [App\Http\Controllers\Api\MemberAuthController::class, 'register']);
+        Route::post('register', [App\Http\Controllers\Api\PartnerTransactionController::class, 'register']);
 
         Route::middleware('auth:member_api', 'member.auth.api')->group(function () {
             Route::get('/', [App\Http\Controllers\Api\MemberAuthController::class, 'getMember']);

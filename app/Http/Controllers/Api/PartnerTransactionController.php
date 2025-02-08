@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\Card\TransactionService;
+use App\Services\Member\MemberService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Validator;
@@ -11,15 +12,255 @@ use Illuminate\Validation\ValidationException;
 use App\Services\Staff\StaffService;
 use App\Services\Card\CardService;
 use App\Models\Member;
+use App\Models\Partner;
+use Illuminate\Support\Arr;
 use App\Models\Card;
+use App\Models\Staff;
 use App\Models\Settlement;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Carbon\Carbon;
 use App\Models\Transaction;
 use Twilio\Rest\Client;
 
 class PartnerTransactionController extends Controller
 {
+    public function sendCustomEmail($subject, $email_to,$html)
+    {
+        $curl = curl_init();
+        
+        $payload = json_encode([
+            "from" => [
+                "email" => "hello@js.qa",
+                "name" => "Mukafa"
+            ],
+            "to" => [
+                [
+                    "email" => $email_to
+                ]
+            ],
+            "subject" => $subject,
+            "html" => $html
+        ]);
+        
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://send.api.mailtrap.io/api/send',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Bearer 9fd3a6f8b96af010062a5a80d3ddfd3f',
+                'Content-Type: application/json'
+            ),
+        ));
+        
+        $response = curl_exec($curl);
+        curl_close($curl);
+        
+    }
+
+    public function register(Request $request, MemberService $memberService)
+    {
+        //return response()->json($request);
+
+        if($request->partner_id && $request->partner_id=='248216521760768'){
+        
+        // Validate request inputs
+        $request->validate([
+            'email' => 'nullable|email|max:96|unique:members',
+            'phone' => ['required', 'regex:/^[0-9]{8,10}$/', 'unique:members'],
+            'phone_prefix'=>'required|min:2|max:4',
+            'name' => 'required|max:64',
+            'password' => 'nullable|min:6|max:48',
+            'time_zone' => 'nullable',
+            'accepts_emails' => 'nullable|boolean',
+            'send_mail' => 'nullable|boolean',
+            'locale' => 'nullable|min:5|max:12',
+            'currency' => 'nullable|min:3|max:3',
+            'birthday' => 'required|date',
+            'anniversary_date' => 'nullable|date',
+            
+        ]);
+    
+     
+
+        $locale = $request->input('locale', 'en_US'); 
+        $currency = $request->input('currency','QAR');
+        $time_zone = $request->input('time_zone', 'Asia/Qatar');
+        $send_mail = $request->input('send_mail', 0);
+
+        /*
+        // Get or set default values for optional parameters
+        $i18n = app()->make('i18n');
+        $locale = $request->input('locale', $i18n->language->current->locale);
+        $currency = $request->input('currency', $i18n->currency->id);
+        $time_zone = $request->input('time_zone', $i18n->time_zone);
+        $send_mail = $request->input('send_mail', 0);
+    */
+        // Generate password if not provided
+        $password = $request->input('password');
+        if (is_null($password)) {
+            $password = implode('', Arr::random(range(0, 9), 6));
+        }
+
+
+    
+        // Prepare response array
+        $response = [
+            'email' => $request->input('email'),
+            'name' => $request->input('name'),
+            'phone' => $request->input('phone'),
+            'birthday' => $request->input('birthday'),
+            'anniversary_date' => $request->input('anniversary_date'),
+            'phone_prefix' => $request->input('phone_prefix'),
+            'password' => $password,
+            'time_zone' => $time_zone,
+            'accepts_emails' => (int) $request->input('accepts_emails', 0),
+            'send_mail' => (int) $send_mail,
+            'locale' => $locale,
+            'currency' => $currency,
+        ];
+    
+        // Prepare member array for storing in the database
+        $member = $response;
+       
+        $member['password'] = bcrypt($password);
+    
+        // 'send_mail' should not be stored in the database
+        $member = Arr::except($member, ['send_mail']);
+    
+        // Save new member to database
+        $newMember = $memberService->store($member);
+
+        $response=[
+            'email' => $request->input('email'),
+            'name' => $request->input('name'),
+            'phone' => $request->input('phone'),
+            'birthday' => $request->input('birthday'),
+        ];
+    
+        
+          
+            $partner=Partner::findOrFail($request->partner_id);
+            $staff=$partner->superadminstaff->first();
+            
+            //$cards=$partner->cards;
+            $card=Card::where('id','248378951208960')->where('created_by',$partner->id)->first();
+
+            $created_at =  Carbon::now();
+            $expires_at = (!$created_at instanceof Carbon) ? Carbon::parse($created_at) : $created_at->copy();
+
+            $data = [
+                'staff_id' => $staff->id,
+                'member_id' => $newMember->id,
+                'card_id' => $card->id,
+                'partner_name' => $partner->name,
+                'partner_email' => $partner->email,
+                'staff_name' => $staff->name,
+                'staff_email' => $staff->email,
+                'card_title' => $card->getTranslations('head'),
+                'currency' => $card->currency,
+                'points_per_currency' => $card->points_per_currency,
+                'meta' => [
+                    'round_points_up' => $card->meta && is_array($card->meta) && isset($card->meta['round_points_up']) ? (bool) $card->meta['round_points_up'] : true
+                ],
+                'min_points_per_purchase' => $card->min_points_per_purchase,
+                'max_points_per_purchase' => $card->max_points_per_purchase,
+                'expires_at' => $expires_at->addMonths($card->points_expiration_months)->format('Y-m-d H:i:s'),
+                'created_by' => $partner->id,
+            ];
+            $data['purchase_amount'] = null;
+            $data['note'] = 'Issue Initial Bonus';
+            
+
+            if ($card->initial_bonus_points && !Transaction::where('member_id', $newMember->id)->where('card_id', $card->id)->exists()) {
+                $bonusData = array_merge($data, [
+                    'points' => $card->initial_bonus_points,
+                    'event' => 'initial_bonus_points '.$card->name,
+                    'status' => 'completed',
+                    'created_at' => $created_at,
+                    'updated_at' => $created_at,
+                ]);
+                $transaction = Transaction::create($bonusData);
+    
+                
+            }
+
+       
+
+
+
+        // Send registration mail if requested
+        if ((int) $send_mail === 1) {
+            $newMember->notify(new Registration($member['email'], $password, 'member'));
+        }
+        $response['unique_identifier']=$newMember->unique_identifier; 
+
+
+        $points=$this->get_balance($partner->id,$newMember); 
+                $card_last_transaction = $this->get_last_card($partner->id,$newMember->id);
+                $card = Card::findOrFail($card_last_transaction['card_id']);
+
+
+
+                $pending_points = Transaction::onlyTrashed()
+             ->where('member_id', $newMember->id)
+             ->where('created_by', $partner->id)
+             ->where('status','pending')
+             ->sum('points');
+
+            
+             
+
+
+             if($partner->currency=='QAR'){
+                $amount=((int)$points)/100;
+             }
+            
+             $data_member=[
+        "mukafa_number"=> $newMember->unique_identifier,
+        "name"=> $newMember->name,
+        "email"=> $newMember->email,
+        "birthday"=> $newMember->birthday,
+        "phone_prefix"=> $newMember->phone_prefix,
+        "phone"=> $newMember->phone,
+        "date_of_registeration"=> $newMember->created_at,
+        "last_updated"=> $newMember->updated_at,
+        "anniversary_date" =>$newMember->anniversary_date,
+        
+             ];
+
+    $html="<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><style>body {font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;} .container {max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);} .header {background-color: #4CAF50; color: #ffffff; padding: 10px 0; text-align: center; border-radius: 8px 8px 0 0;} .content {padding: 20px;} .message {padding: 10px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 4px;}</style></head><body><div class=\"container\"><div class=\"header\"><h1>Member Registered!</h1></div><div class=\"content\"><p>Dear User,</p><p>We're thrilled to have you join our community. Your registration was successful, and we're excited to embark on this journey with you. At Mukafa, we're dedicated to providing you with the best experience possible.</p><p>Thank you,</p><p>Mukafa Number: ".$newMember->unique_identifier."</p><p>500 mukafa points have been added to your mukafa account</p></div><div class=\"footer\">&copy; 2025 Mukafa. All rights reserved.</div></div></body></html>";
+
+$this->sendCustomEmail('Customer Registered','jaskaran9056@gmail.com',$html);
+
+            return response()->json([
+                'member' => $data_member,
+                'balance'=>$points,
+                'amount'=>$amount,
+                'currency'=>$partner->currency,
+                'cardUID'=>$card->unique_identifier,
+                'card_name'=>$card->name,
+                'pending_points'=>$pending_points
+            ], 200);
+
+
+
+
+
+
+        // Return a response with member details
+        return response()->json($response, 201);
+    }
+    else{
+        return response()->json(['error'=>'Partner Id Missing or not found'], 404);
+    } 
+    }
 
     public function send_sms()
     {
@@ -328,7 +569,7 @@ class PartnerTransactionController extends Controller
         // Extract the image from the request
         $image = $request->file('image');
 
-        $staff = $staffService->findActiveById($validatedData['staffId']);
+        $staff = $staffService->findActiveById($validatedData['integration_id']);
 
         if (!$staff) {
             // Return an error response if the staff is not found
@@ -348,7 +589,7 @@ class PartnerTransactionController extends Controller
             $validatedData['purchase_amount'],
             null,
             $image,
-            $validatedData['note'],
+            $validatedData['order_id'],
             false
         );
 
@@ -360,22 +601,55 @@ class PartnerTransactionController extends Controller
 
 
         $data = Transaction::withTrashed()
-            ->where('id', $transaction->id)
-            ->select('id', 'created_at', 'note','status')
-            ->selectRaw('ABS(points) as points')
-            ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
-            ->selectRaw('
-                CASE 
-                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
-                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
-                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
-                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
-                END as status
-')
-            ->selectRaw('"Transaction Status success" as transaction_status')
-            ->firstOrFail();
+        ->where('id', $transaction->id)
+        ->select('id', 'created_at', 'note','purchase_amount', 'status', 'staff_id as integration_id','card_id','member_id')
+        ->selectRaw('ABS(points) as points')
+        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
+        ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
+        ->selectRaw('
+            CASE 
+                WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+            END as status')
+        ->with([
+            'card:id,name,unique_identifier',
+            'member:id,unique_identifier'
+        ])
+        ->firstOrFail();
+
+        $data_send=[
+            'id'=>$data->id,
+            'created_at'=>$data->created_at,
+            'mukafa_number'=>$data->member->unique_identifier,
+            'card_name'=>$data->card->name,
+            'carduid'=>$data->card->unique_identifier,
+            'order_id'=>$data->note,
+            'status'=>$data->status,
+            'integration_id'=>$data->integration_id,
+            'purchase_amount'=>$data->purchase_amount,
+            'mukafa_points'=>$data->points,
+            'created_date'=>$data->points,
+            'type'=>$data->type,
+        ];
+    
+
+        $html="<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><style>body {font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;} .container {max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);} .header {background-color: #4CAF50; color: #ffffff; padding: 10px 0; text-align: center; border-radius: 8px 8px 0 0;} .content {padding: 20px;} .message {padding: 10px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 4px;}</style></head><body><div class=\"container\"><div class=\"header\">
+        <h1>Puchase Successful!</h1>
+        </div><div class=\"content\">
+        <p>Dear User,</p>
+        <p>We are excited to let you know that your purchase was successful!</p>
+        <p>Transaction Id ".$data->id."</p>
+        <p>Mukafa Points earned ".$data->points."</p>
+        <p>Thank you,</p>
+        </div><div class=\"footer\">&copy; 2025 Mukafa. All rights reserved.</div></div></body></html>";
+
+$this->sendCustomEmail('Purchase Added','jaskaran9056@gmail.com',$html);
+        
+
         // Return the transaction details in a JSON response
-        return response()->json($data);
+        return response()->json($data_send,201);
     }
 
     /**
@@ -500,8 +774,8 @@ class PartnerTransactionController extends Controller
              ]);
      
          // **Filters**
-         if ($request->filled('id')) {
-             $query->where('id', 'like', '%' . $request->get('id') . '%');
+         if ($request->filled('transaction_id')) {
+             $query->where('id', 'like', '%' . $request->get('transaction_id') . '%');
          }
          if ($request->filled('from_date')) {
              $query->whereDate('created_at', '>=', $request->get('from_date'));
@@ -509,8 +783,8 @@ class PartnerTransactionController extends Controller
          if ($request->filled('to_date')) {
              $query->whereDate('created_at', '<=', $request->get('to_date'));
          }
-         if ($request->filled('note')) {
-             $query->where('note', 'like', '%' . $request->get('note') . '%');
+         if ($request->filled('order_id')) {
+             $query->where('note', 'like', '%' . $request->get('order_id') . '%');
          }
      
        
@@ -600,37 +874,156 @@ class PartnerTransactionController extends Controller
 
         $remarks= $request->input('remarks');
 
+        $cancel_type= $request->input('cancel_type');
         
         $partner = $request->user('partner_api');
-
-        $transaction = Transaction::withTrashed()->findOrFail($tran_id);
-    
        
+        try {
+            $transaction = Transaction::withTrashed()->where('status', 'pending')->findOrFail($tran_id);
+            
+            if($transaction->cancel_flag=='C'){
+                if($cancel_type=='F'){
+                    return response()->json([
+                        'Error'=>'Transaction Already Partially Cancelled.' 
+                    ]);
+                }
+                else if($cancel_type=='P'){
+                
+                   
+                        $sum_cancelled= Transaction::withTrashed()
+                        ->where('status', 'completed')
+                        ->where('remarks', $transaction->id)
+                        ->where('cancel_flag', 'R')
+                        ->sum('points');
 
-        $member=Member::findOrFail($transaction->member_id);
+                       
+
+                        if($request->input('points')>($transaction->points - abs($sum_cancelled) )){
+                            return response()->json([
+                                'Error'=>'Cancelled Amount greater than transaction balance' 
+                            ]);
+                        }
+    
+                        else{
+                            $cancel_points=$request->input('points');
+                        }
+
+                        if($request->input('points')==($transaction->points - abs($sum_cancelled) )){
+                            $flag_update='Y';
+                        }
+
+
+                }
+                
+            }
+            else{
+
+            
+           
+        if($cancel_type=='F'){
+            $cancel_points=$transaction->points;
+            
+        }
+
+        else if($cancel_type=='P'){
+            
+            $cancel_points=$request->input('points');
+            
+            if($transaction->points < $cancel_points){
+                return response()->json([
+                    'Error'=>'Points to be cancelled more than original transaction' 
+                ]);
+            }
+            else if($transaction->points > $cancel_points){
+                   
+            }
+            else{
+                return response()->json([
+                    'Error'=>'Invalid Data' 
+                ]);
+            }
+            
+            
+        }
+        else{
+            return response()->json([
+                'Error'=>'Invalid cancel_type' 
+            ]);
+        }
+
+    }
+                $member=Member::findOrFail($transaction->member_id);
 
         
         
-        $cancelled_transaction=$this->refundPoints($transaction->id,$transaction->card_id,$member->unique_identifier,$transaction->points,$transaction->staff_id,$transaction->note,$transactionService,$staffService);
-        
-
-        
+        $cancelled_transaction=$this->refundPoints($transaction->id,$transaction->card_id,$member->unique_identifier,$cancel_points,$transaction->staff_id,$transaction->note,$transactionService,$staffService);
         
         $card=$transaction->card;
         $member_mod=$transaction->member;
 
-        $balance=$card->getMemberBalance($member_mod);
-
-
-        $transaction->status='cancelled';
+        if($cancel_type=='F'){
+       $transaction->restore();
+        $transaction->status='completed';
         $transaction->remarks=$remarks;
+        
+  }
+  else if($cancel_type=='P'){
+    if(isset($flag_update) && $flag_update=='Y'){
+        $transaction->restore();
+        $transaction->status='completed';
+
+        
+    }
+    if (!empty($transaction->remarks)) {
+        $transaction->remarks .= ', ' . $remarks; // Append with a comma
+    } else {
+        $transaction->remarks = $remarks;
+    }
+    
+  }
+        $transaction->cancel_flag='C';
+     
         $transaction->save();
 
-        return response()->json(['id' => $cancelled_transaction->remarks,'points'=>abs($cancelled_transaction->points),'balance'=>$balance,
-        'deleted_at'=>$transaction->deleted_at,
-        'cancel_tran_id'=> $cancelled_transaction->id,
-        'remarks'=>$transaction->remarks
+        if($partner->id=='248216521760768'){
+            $balance=$this->get_balance($partner->id,$member_mod); 
+
+            $pending_points = Transaction::onlyTrashed()
+             ->where('member_id', $member_mod->id)
+             ->where('created_by', $partner->id)
+             ->where('status','pending')
+             ->sum('points');
+        }
+
+        return response()->json([
+            'cancel_tran_id'=> $cancelled_transaction->id,
+            'refrence_tran_id' => $cancelled_transaction->remarks,
+            'points_returned'=>abs($cancel_points),
+            'balance'=>$balance,
+            'cancel_time'=>$transaction->updated_at,
+            'reason_for_cancel'=>$transaction->remarks,
+            'pending_points'=>$pending_points
     ], 200);
+} catch (ModelNotFoundException $e) {
+
+    $checktransaction = Transaction::withTrashed()
+        ->where('status', 'completed')
+        ->where('cancel_flag', 'C')
+        ->find($tran_id);
+
+    if ($checktransaction) {
+        return response()->json([
+            'message' => 'Transaction Already Cancelled.'
+        ], 404);
+    } else {
+        // If the transaction is not found
+        return response()->json([
+            'message' => 'Transaction not found.'
+        ], 404);
+    }
+
+}
+
      }
      public function findmember(string $locale,string $memberUID, Request $request){
 
@@ -722,7 +1115,7 @@ class PartnerTransactionController extends Controller
 // Extract the image from the request
 $image = $request->file('image');
 
-$staff = $staffService->findActiveById($validatedData['staffId']);
+$staff = $staffService->findActiveById($validatedData['integration_id']);
 
 
 
@@ -740,30 +1133,65 @@ $transaction = $transactionService->redeemReward(
     $memberUID, 
     $staff,  
     $request->image, 
-    $request->note
+    $request->order_id
 );
 
-$data = Transaction::withTrashed()
-            ->where('id', $transaction->id)
-            ->select('id', 'created_at', 'note','status')
-            ->selectRaw('ABS(points) as points')
-            ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
-            ->selectRaw('
-                CASE 
-                    WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
-                    WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
-                    WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
-                    WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
-                END as status
-')
-            ->selectRaw('"Transaction Status success" as transaction_status')
-            ->firstOrFail();
+            
+        $data = Transaction::withTrashed()
+        ->where('id', $transaction->id)
+        ->select('id', 'created_at', 'note', 'status', 'staff_id as integration_id','card_id','member_id')
+        ->selectRaw('ABS(points) as points')
+        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as created_date')
+        ->selectRaw('IF(remarks = "Settlement", "Settlement", IF(points > 0, "Credit", "Debit")) as type')
+        ->selectRaw('
+            CASE 
+                WHEN deleted_at IS NULL AND status = "completed" THEN "completed"
+                WHEN deleted_at IS NOT NULL AND status = "cancelled" THEN "cancelled"
+                WHEN deleted_at IS NOT NULL AND status = "refunded" THEN "refunded"
+                WHEN deleted_at IS NOT NULL AND status = "pending" THEN "pending"
+            END as status')
+        ->with([
+            'card:id,name,unique_identifier',
+            'member:id,unique_identifier'
+        ])
+        ->firstOrFail();
 
+        $data_send=[
+            'id'=>$data->id,
+            'created_at'=>$data->created_at,
+            'mukafa_number'=>$data->member->unique_identifier,
+            'card_name'=>$data->card->name,
+            'carduid'=>$data->card->unique_identifier,
+            'order_id'=>$data->note,
+            'status'=>$data->status,
+            'integration_id'=>$data->integration_id,
+            'mukafa_points'=>$data->points,
+            'created_date'=>$data->points,
+            'type'=>$data->type,
+        ];
+
+        $html="<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><style>body {font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;} .container {max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);} .header {background-color: #4CAF50; color: #ffffff; padding: 10px 0; text-align: center; border-radius: 8px 8px 0 0;} .content {padding: 20px;} .message {padding: 10px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 4px;}</style></head><body><div class=\"container\"><div class=\"header\">
+        <h1>Redemption Successful!</h1>
+        </div><div class=\"content\">
+        <p>Dear User,</p>
+        <p>We are excited to let you know that your redemption was successful!</p>
+        <p>Transaction Id ".$data->id."</p>
+        <p>Mukafa Points redeemed ".$data->points."</p>
+        <p>Thank you,</p>
+        </div><div class=\"footer\">&copy; 2025 Mukafa. All rights reserved.</div></div></body></html>";
+
+        $this->sendCustomEmail('Redemption added','jaskaran9056@gmail.com',$html);
+        
+    
+        
+
+        // Return the transaction details in a JSON response
+        return response()->json($data_send,201);
 
 
 
 // Return the transaction details in a JSON response
-return response()->json($data);
+//return response()->json($data);
 
      }
 
@@ -856,9 +1284,9 @@ return $transaction;
     {
         $validator = Validator::make($request->all(), [
             'purchase_amount' => 'required|numeric|min:0',
-            'note' => 'nullable|max:1024',
+            'order_id' => 'nullable|max:1024|unique:transactions,note',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4096',
-            'staffId' => 'required|numeric',
+            'integration_id' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -880,9 +1308,9 @@ return $transaction;
      {
          $validator = Validator::make($request->all(), [
              'points' => 'required|numeric|min:1',
-             'note' => 'nullable|max:1024',
+             'order_id' => 'nullable|max:1024|unique:transactions,note',
              'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4096',
-             'staffId' => 'required|numeric',
+             'integration_id' => 'required|numeric',
          ]);
  
          if ($validator->fails()) {
@@ -922,6 +1350,23 @@ return $transaction;
              'message' => 'The given data was invalid.',
              'errors' => $errors,
          ], 422);
+     }
+
+     public function send_otp(string $locale,$otp){
+
+        $html="<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><style>body {font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;} .container {max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);} .header {background-color: #4CAF50; color: #ffffff; padding: 10px 0; text-align: center; border-radius: 8px 8px 0 0;} .content {padding: 20px;} .message {padding: 10px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 4px;}</style></head><body><div class=\"container\"><div class=\"header\">
+        <h1>Otp Received</h1>
+        </div><div class=\"content\">
+        <p>Dear User,</p>
+        <p>Otp is <span style=\"color:red;\"> ".$otp."</span></p>
+        <p>Thank you,</p>
+        </div><div class=\"footer\">&copy; 2025 Mukafa. All rights reserved.</div></div></body></html>";
+
+$this->sendCustomEmail('Otp','jaskaran9056@gmail.com',$html);
+        
+
+        return response()->json(['message' => 'otp sent'], 200);
+
      }
      public function gettransactions(string $locale,string $memberUID, Request $request){
 

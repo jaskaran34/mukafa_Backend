@@ -113,11 +113,11 @@ class MemberAuthController extends Controller
     public function register(Request $request, MemberService $memberService)
     {
 
-        
+        if($request->partner_id && $request->partner_id=='248216521760768'){
         
         // Validate request inputs
         $request->validate([
-            'email' => 'required|email|max:96|unique:members',
+            'email' => 'nullable|email|max:96|unique:members',
             'phone' => ['required', 'regex:/^[0-9]{8,10}$/', 'unique:members'],
             'phone_prefix'=>'required|min:2|max:4',
             'name' => 'required|max:64',
@@ -132,7 +132,7 @@ class MemberAuthController extends Controller
             
         ]);
     
-       
+     
 
         $locale = $request->input('locale', 'en_US'); 
         $currency = $request->input('currency','QAR');
@@ -152,6 +152,8 @@ class MemberAuthController extends Controller
         if (is_null($password)) {
             $password = implode('', Arr::random(range(0, 9), 6));
         }
+
+
     
         // Prepare response array
         $response = [
@@ -185,10 +187,9 @@ class MemberAuthController extends Controller
             'name' => $request->input('name'),
             'phone' => $request->input('phone'),
             'birthday' => $request->input('birthday'),
-            'status'=>'Success'
         ];
     
-        if($request->partner_id && $request->partner_id=='248216521760768'){
+        
           
             $partner=Partner::findOrFail($request->partner_id);
             $staff=$partner->superadminstaff->first();
@@ -235,7 +236,7 @@ class MemberAuthController extends Controller
                 
             }
 
-        }
+       
 
 
 
@@ -244,8 +245,18 @@ class MemberAuthController extends Controller
             $newMember->notify(new Registration($member['email'], $password, 'member'));
         }
         $response['unique_identifier']=$newMember->unique_identifier; 
+
+
+
+
+
+
         // Return a response with member details
         return response()->json($response, 201);
+    }
+    else{
+        return response()->json(['error'=>'Partner Id Missing or not found'], 404);
+    } 
     }
 
     /**
