@@ -268,7 +268,7 @@ class Card extends Model implements HasMedia
             ->first();
             $balance = $balance ?? 0;
         }
-    //Log::info($balance);
+   // Log::info($balance);
         // Format the balance to 2 decimal places and cast to float.
         return (float) number_format($balance, 2, '.', '');
     }

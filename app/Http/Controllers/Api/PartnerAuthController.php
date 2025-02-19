@@ -6,9 +6,17 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotifyService;
 
 class PartnerAuthController extends Controller
 {
+
+    protected $notifyService;
+
+    public function __construct(NotifyService $notifyService)
+    {
+        $this->notifyService = $notifyService;
+    }
     /**
      * Authenticate and log in a partner.
      *
@@ -68,91 +76,6 @@ class PartnerAuthController extends Controller
      * )
      */
 
-     public function sendWhatsapp($to)
-     {
-         $curl = curl_init();
-     
-         $payload = json_encode([
-             "messages" => [
-                 [
-                     "from" => "447860099299",
-                     "to" => $to,
-                     "messageId" => "0b6e8b15-6c93-4815-8966-4a9d330395b9",
-                     "content" => [
-                         "templateName" => "test_whatsapp_template_en",
-                         "templateData" => [
-                             "body" => [
-                                 "placeholders" => ["Jaskaran Singh"]
-                             ]
-                         ],
-                         "language" => "en"
-                     ]
-                 ]
-             ]
-         ]);
-     
-         curl_setopt_array($curl, [
-             CURLOPT_URL => 'https://v3xree.api.infobip.com/whatsapp/1/message/template',
-             CURLOPT_RETURNTRANSFER => true,
-             CURLOPT_ENCODING => '',
-             CURLOPT_MAXREDIRS => 10,
-             CURLOPT_TIMEOUT => 0,
-             CURLOPT_FOLLOWLOCATION => true,
-             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-             CURLOPT_CUSTOMREQUEST => 'POST',
-             CURLOPT_POSTFIELDS => $payload,
-             CURLOPT_HTTPHEADER => [
-                 'Authorization: App b16dbd5ab7bf6a87c5c112a84aae284a-d6f4fa39-8d2d-4030-ac9d-3ae2ed37d574',
-                 'Content-Type: application/json',
-                 'Accept: application/json'
-             ],
-         ]);
-     
-         $response = curl_exec($curl);
-         curl_close($curl);
-     
-     }
-     
-     
-
-     public function sendCustomEmail($subject, $email_to,$html)
-     {
-         $curl = curl_init();
-         
-         $payload = json_encode([
-             "from" => [
-                 "email" => "hello@js.qa",
-                 "name" => "Mukafa"
-             ],
-             "to" => [
-                 [
-                     "email" => $email_to
-                 ]
-             ],
-             "subject" => $subject,
-             "html" => $html
-         ]);
-         
-         curl_setopt_array($curl, array(
-             CURLOPT_URL => 'https://send.api.mailtrap.io/api/send',
-             CURLOPT_RETURNTRANSFER => true,
-             CURLOPT_ENCODING => '',
-             CURLOPT_MAXREDIRS => 10,
-             CURLOPT_TIMEOUT => 0,
-             CURLOPT_FOLLOWLOCATION => true,
-             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-             CURLOPT_CUSTOMREQUEST => 'POST',
-             CURLOPT_POSTFIELDS => $payload,
-             CURLOPT_HTTPHEADER => array(
-                 'Authorization: Bearer 9fd3a6f8b96af010062a5a80d3ddfd3f',
-                 'Content-Type: application/json'
-             ),
-         ));
-         
-         $response = curl_exec($curl);
-         curl_close($curl);
-         
-     }
      
     public function login(Request $request)
     {
@@ -167,12 +90,18 @@ class PartnerAuthController extends Controller
             $user = Auth::guard('partner')->user();
             $token =  $user->createToken('PartnerAPIToken')->plainTextToken;
 
-$html="<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><style>body {font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;} .container {max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);} .header {background-color: #4CAF50; color: #ffffff; padding: 10px 0; text-align: center; border-radius: 8px 8px 0 0;} .content {padding: 20px;} .message {padding: 10px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 4px;}</style></head><body><div class=\"container\"><div class=\"header\"><h1>Login Successful!</h1></div><div class=\"content\"><p>Dear User,</p><p>We are excited to let you know that your login was successful! Welcome back to Mukafa.</p><p>Thank you,</p><p>Mukafa</p></div><div class=\"footer\">&copy; 2025 Mukafa. All rights reserved.</div></div></body></html>";
 
-$this->sendCustomEmail('Login','jaskaran9056@gmail.com',$html);
 
-$this->sendwhatsapp('917889481714');
+/*
+        $this->notifyService->sendCustomEmail( ["email" => 'jaskaran9056@gmail.com'],'1');
 
+$type_of_msg = 'auth_otp';
+        $to = '917889481714';
+        $messageId = 'sncjscjk-snsmc-cmscmm';
+
+        $this->notifyService->sendWhatsapp($type_of_msg, $to, $messageId);
+
+*/
 
 
             return response()->json(['token' => $token], 200);

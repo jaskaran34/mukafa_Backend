@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mukafa API Error Information</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Mukafa API Error Information</h2>
+
+<!-- Member/Customer Register API -->
+<h3>1. Member/Customer Register API</h3>
+<table>
+    <tr>
+        <th>Attribute</th>
+        <th>Details</th>
+    </tr>
+    <tr>
+        <td><strong>Endpoint</strong></td>
+        <td><code>POST {{baseurl}}/member/register</code></td>
+    </tr>
+    <tr>
+        <td><strong>Request Body (JSON)</strong></td>
+        <td>
+            <ul>
+                <li><code>name</code> (string, required): Customer's full name.</li>
+                <li><code>email</code> (string, optional, unique): Customer's email (must be unique if provided).</li>
+                <li><code>phone_prefix</code> (string, required): Phone number prefix (e.g., "+1").</li>
+                <li><code>phone</code> (string, required): Phone number (combined with <code>phone_prefix</code>, must be unique).</li>
+                <li><code>birthday</code> (string, required): Date of birth (<code>YYYY-MM-DD</code>).</li>
+                <li><code>partner_id</code> (string, required): Partner's unique identifier.</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Responses</strong></td>
+        <td>
+            <ul>
+                <li><strong>201 Created</strong>: Customer successfully created.
+                    
+                </li>
+                <br>
+                <li><strong>422 Unprocessable Entity</strong>: Validation error (e.g., non-unique phone, missing fields, or invalid data).
+                    <pre><code>{
+  "errors": {
+    "name required",
+    "email already exist"
+    "phone": "Phone number already exists",
+    "birthday": "Birthday is required"
+  }
+}</code></pre>
+                </li>
+                <li><strong>404 Not Found</strong>: Partner not found.
+                    <pre><code>{
+  "message": "Partner not found"
+}</code></pre>
+                </li>
+            </ul>
+        </td>
+    </tr>
+    
+</table>
+
+<!-- Add Purchase API -->
+<h3>2. Add Purchase API</h3>
+<table>
+    <tr>
+        <th>Attribute</th>
+        <th>Details</th>
+    </tr>
+    <tr>
+        <td><strong>Endpoint</strong></td>
+        <td><code>POST {{baseurl}}/partner/cards/{{carduid}}/{{member_id}}/transactions/purchases</code></td>
+    </tr>
+    <tr>
+        <td><strong>Request Body (JSON)</strong></td>
+        <td>
+            <ul>
+                <li><code>purchase_amount</code> (numeric, required,greater than 0): The amount of the purchase.</li>
+                <li><code>order_id</code> (string, required, unique): A unique identifier for the order.</li>
+                <li><code>integration_id</code> (string, required): The integration ID (must exist in the system).</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Responses</strong></td>
+        <td>
+            <ul>
+                <li><strong>201 Created</strong>: Purchase successfully added.
+                    <pre><code>{
+  "message": "Purchase added successfully"
+}</code></pre>
+                </li>
+                <li><strong>422 Unprocessable Entity</strong>: Validation error (e.g., missing fields, invalid data, or non-unique <code>order_id</code>).
+                    <pre><code>{
+  "errors": {
+    "purchase_amount": "Purchase amount is required",
+    "order_id": "Order ID must be unique",
+    "integration_id": "Integration ID does not exist",
+    "<code>memberuid</code> or <code>carduid</code> not found".
+  }
+}</code></pre>
+                </li>
+              
+            </ul>
+        </td>
+    </tr>
+    
+</table>
+
+<!-- Cancel Transaction API -->
+<h3>3. Cancel Transaction API</h3>
+<table>
+    <tr>
+        <th>Attribute</th>
+        <th>Details</th>
+    </tr>
+    <tr>
+        <td><strong>Endpoint</strong></td>
+        <td><code>POST {{baseurl}}/transactions/{{tran_id}}/cancel</code></td>
+    </tr>
+    <tr>
+        <td><strong>Request Body (JSON)</strong></td>
+        <td>
+            <ul>
+                <li><code>cancel_type</code> (string, required): Type of cancellation (<code>F</code> for full, <code>P</code> for partial).</li>
+                <li><code>points</code> (integer, optional): Points to cancel (required for partial cancellation).</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Responses</strong></td>
+        <td>
+            <ul>
+                <li><strong>200 OK</strong>: Transaction successfully cancelled.
+                    <pre><code>{
+  "message": "Transaction cancelled successfully"
+}</code></pre>
+                </li>
+                <li><strong>422 Unprocessable Entity</strong>: Validation errors.
+                    <pre><code>{
+  "message": "Validation error",
+  "errors": {
+    "Transaction Already Cancelled": "Transaction Already Cancelled.",
+    "Transaction Already Partially Cancelled": "Transaction Already Partially Cancelled.",
+    "Cancelled Amount greater than transaction balance": "Cancelled Amount greater than transaction balance.",
+    "Points to be cancelled more than original transaction": "Points to be cancelled more than original transaction.",
+    "Invalid Data": "Invalid Data.",
+    "Invalid cancel_type": "Invalid cancel_type."
+  }
+}</code></pre>
+                </li>
+                <li><strong>404 Not Found</strong>: Transaction not found.
+                    <pre><code>{
+  "message": "Transaction not found."
+}</code></pre>
+                </li>
+            </ul>
+        </td>
+    </tr>
+    
+</table>
+
+<!-- Find Member API -->
+<h3>4. Find Member and gettransactions API </h3>
+<table>
+    <tr>
+        <th>Attribute</th>
+        <th>Details</th>
+    </tr>
+    <tr>
+        <td><strong>Endpoint</strong></td>
+        <td><code>GET findmember: {{baseurl}}/partner/member/{{member_id}}</code><br><br><code>GET  gettransactions: {{baseurl}}/partner/transaction/member/{{member_id}}</code></td>
+    </tr>
+    <tr>
+        <td><strong>Request Body</strong></td>
+        <td>None</td>
+    </tr>
+    <tr>
+        <td><strong>Responses</strong></td>
+        <td>
+            <ul>
+                <li><strong>200 OK</strong>
+                   
+                </li>
+                <li><strong>404 Not Found</strong>: Member not found.
+                    <pre><code>{
+  "message": "Member not found"
+}</code></pre>
+                </li>
+            </ul>
+        </td>
+    </tr>
+   
+</table>
+
+<!-- Redeem Points API -->
+<h3>5. Redeem Points API</h3>
+<table>
+    <tr>
+        <th>Attribute</th>
+        <th>Details</th>
+    </tr>
+    <tr>
+        <td><strong>Endpoint</strong></td>
+        <td><code>POST {{baseurl}}/partner/cards/{{carduid}}/{{member_id}}/transactions/points/redeem</code></td>
+    </tr>
+    <tr>
+        <td><strong>Request Body (JSON)</strong></td>
+        <td>
+            <ul>
+                <li><code>points</code> (numeric, required, gt>0): Points to redeem.</li>
+                <li><code>order_id</code> (string, required, unique): A unique identifier for the redemption.</li>
+                <li>Integration id (string,required)</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Responses</strong></td>
+        <td>
+            <ul>
+                <li><strong>201 OK</strong>: Points successfully redeemed.
+                    <pre><code>{
+  "message": "Points redeemed successfully"
+}</code></pre>
+                </li>
+                <li><strong>422 Unprocessable Entity</strong>: Validation errors.
+                    <pre><code>{
+  "errors": {
+    "points": "Points are required",
+    "order_id": "Order ID must be unique",
+    "insufficient_points": "Insufficient points to redeem"
+    "<code>memberuid</code> or <code>carduid</code> not found."
+  }
+}</code></pre>
+                </li>
+                </ul>
+</table>
+
+</body>
+</html>

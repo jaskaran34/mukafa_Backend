@@ -66,8 +66,13 @@ Route::prefix('{locale}/v1')->group(function () {
 
             Route::post('register', [App\Http\Controllers\Api\PartnerTransactionController::class, 'register']);
        
-            Route::get('otp/{otp}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'send_otp']);
+            Route::get('otp/{message_id}/{mukafa_no}/{request_type}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'send_otp']);
+
+            Route::get('verify_otp/{message_id}/{mukafa_no}/{request_type}/{otp}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'verify_otp']);
            
+            Route::get('findmember/{phone}/{phone_prefix}', [App\Http\Controllers\Api\PartnerTransactionController::class, 'search_member']);
+           
+            
         });
     });
     Route::prefix('member')->group(function () {

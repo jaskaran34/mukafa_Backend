@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Services\Card;
-
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Collection;
 use App\Services\Member\MemberService;
 use App\Services\Card\RewardService;
@@ -145,7 +145,7 @@ class TransactionService
             ->where('status', 'completed')
             ->where('currency', 'QAR')
             ->whereNull('deleted_at')
-            ->whereBetween('created_at', [now()->subYear(), now()]) 
+            ->where('expires_at', '>', now())
             ->sum('purchase_amount');
 
         
@@ -476,18 +476,23 @@ class TransactionService
     ): Transaction|bool {
         // Fetch member and card details
         $card = $this->cardService->findActiveCard($card_id);
+
+        
         
         $member = $this->memberService->findActiveByIdentifier($member_identifier);
+        
         $partner = $card->partner;
 
         // Check if staff has access to card
         if (!$staff->isRelatedToCard($card)) {
-            abort(401);
+            throw new \Exception('No Authority');
         }
-
+        
         if ($card->getMemberBalance($member) < $points) {
-            return false;
+            throw new \Exception('Insufficient balance. The member does not have enough points.');
         }
+       // Log::info($partner);
+      
 
         /**
          * Updates a member's points balance based on transactions that haven't yet expired. 
@@ -508,6 +513,8 @@ class TransactionService
 
          */
 
+         
+
          if($partner_id=='248216521760768'){
 
             $cardIdMap = [
@@ -526,6 +533,8 @@ class TransactionService
                 ->where('expires_at', '>', Carbon::now())
                 ->orderBy('created_at', 'asc')
                 ->get();
+
+              
 
          }
          else
@@ -590,6 +599,8 @@ class TransactionService
             'created_at' => $created_at ?? Carbon::now(),
             'updated_at' => $created_at ?? Carbon::now(),
         ];
+
+      
 
         // Create a new transaction record
         $transaction = Transaction::create($data);

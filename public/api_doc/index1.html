@@ -1,0 +1,1250 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mukafa API</title>
+    <style type="text/css">
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 16px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  thead {
+    background-color: #0073e6;
+    color: white;
+  }
+
+  th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+  }
+
+  tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  tbody tr:hover {
+    background-color: #e6f7ff;
+  }
+      body {
+      	font-family: Trebuchet MS, sans-serif;
+      	font-size: 15px;
+      	color: #444;
+      	margin-right: 24px;
+      }
+      
+      h1	{
+      	font-size: 25px;
+      }
+      h2	{
+      	font-size: 20px;
+      }
+      h3	{
+      	font-size: 16px;
+      	font-weight: bold;
+      }
+      hr	{
+      	height: 1px;
+      	border: 0;
+      	color: #ddd;
+      	background-color: #ddd;
+      }
+      
+      .app-desc {
+        clear: both;
+        margin-left: 20px;
+      }
+      .param-name {
+        width: 100%;
+      }
+      .license-info {
+        margin-left: 20px;
+      }
+      
+      .license-url {
+        margin-left: 20px;
+      }
+      
+      .model {
+        margin: 0 0 0px 20px;
+      }
+      
+      .method {
+        margin-left: 20px;
+      }
+      
+      .method-notes	{
+      	margin: 10px 0 20px 0;
+      	font-size: 90%;
+      	color: #555;
+      }
+      
+      pre {
+        padding: 10px;
+        margin-bottom: 2px;
+      }
+      
+      .http-method {
+       text-transform: uppercase;
+      }
+      
+      pre.get {
+        background-color: #0f6ab4;
+      }
+      
+      pre.post {
+        background-color: #10a54a;
+      }
+      
+      pre.put {
+        background-color: #c5862b;
+      }
+      
+      pre.delete {
+        background-color: #a41e22;
+      }
+      
+      .huge	{
+      	color: #fff;
+      }
+      
+      pre.example {
+        background-color: #f3f3f3;
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+      
+      code {
+        white-space: pre;
+      }
+      
+      .nickname {
+        font-weight: bold;
+      }
+      
+      .method-path {
+        font-size: 1.5em;
+        background-color: #0f6ab4;
+      }
+      
+      .up {
+        float:right;
+      }
+      
+      .parameter {
+        width: 500px;
+      }
+      
+      .param {
+        width: 500px;
+        padding: 10px 0 0 20px;
+        font-weight: bold;
+      }
+      
+      .param-desc {
+        width: 700px;
+        padding: 0 0 0 20px;
+        color: #777;
+      }
+      
+      .param-type {
+        font-style: italic;
+      }
+      
+      .param-enum-header {
+      width: 700px;
+      padding: 0 0 0 60px;
+      color: #777;
+      font-weight: bold;
+      }
+      
+      .param-enum {
+      width: 700px;
+      padding: 0 0 0 80px;
+      color: #777;
+      font-style: italic;
+      }
+      
+      .field-label {
+        padding: 0;
+        margin: 0;
+        clear: both;
+      }
+      
+      .field-items	{
+      	padding: 0 0 15px 0;
+      	margin-bottom: 15px;
+      }
+      
+      .return-type {
+        clear: both;
+        padding-bottom: 10px;
+      }
+      
+      .param-header {
+        font-weight: bold;
+      }
+      
+      .method-tags {
+        text-align: right;
+      }
+      
+      .method-tag {
+        background: none repeat scroll 0% 0% #24A600;
+        border-radius: 3px;
+        padding: 2px 10px;
+        margin: 2px;
+        color: #FFF;
+        display: inline-block;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+  <h1>Mukafa API</h1>
+  <div class="app-desc">
+    <p>API for managing partners, staff, members, transactions, and reward cards.</p>
+  
+    <p><strong style="color: #0073e6;">Partner</strong>: A partner represents a business or organization that can register and manage members in the Mukafa system. To begin, a partner must first register with Mukafa by submitting their details. Upon successful registration and approval from the Mukafa team, the partner will gain API access. This process includes whitelisting the partner's IP address to ensure secure communication with the Mukafa system. Once approved, the partner will receive login credentials that allow authentication using an email and password to obtain an API token. This token must be included in the <code>Authorization</code> header as a Bearer token in subsequent requests.</p>
+  
+    <p><strong style="color: #0073e6;">Card</strong>: Cards represent a tiered rewards system associated with a partner. These cards define the rules and benefits, such as how many Mukafa points a user earns based on specific actions, like spending money on the partner's platform. For example, a user may be assigned a <strong>Tier 1</strong> card, where for every 100 units spent, they earn 100 Mukafa points. Depending on the card tier, the reward may vary, with higher tiers offering more points or additional benefits (e.g., Tier 2 may offer 150 points for the same amount spent).Additionally, based on the member's activity and performance, they may be promoted to a higher tier. For instance, if a user spends more or meets certain performance metrics defined by the partner, they can move from <strong>Tier 1</strong> to <strong>Tier 2</strong>, which provides greater rewards, such as earning more Mukafa points per transaction.</p>
+  
+    <p><strong style="color: #0073e6;">Member</strong>: A member is an individual registered under a partner who participates in the Mukafa program. Members receive a Mukafa number, can track their points balance, and participate in the rewards system. Each member has unique information, such as their phone number, birthday, and account balance.</p>
+  
+    <table>
+      <thead>
+        <tr>
+          <th>S. No</th>
+          <th>Entity</th>
+          <th>Meaning</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Partner</td>
+          <td>A business or organization that registers with Mukafa</td>
+          <td>JumboSouq</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Member</td>
+          <td>A customer of the business or organization</td>
+          <td>Any customer of JumboSouq marketplace</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Card</td>
+          <td>A tiered reward system based on user spending</td>
+          <td>KB,MB,GB,TB tiers</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+    <div class="app-desc">More information: <a href="https://www.jumbosouq.com">https://www.jumbosouq.com</a></div>
+    <div class="app-desc">Contact Info: <a href="info@jumbosouq.com">info@jumbosouq.com</a></div>
+    <div class="app-desc">Version: 1.0.0</div>
+    
+    <div class="license-info">Proprietary License</div>
+    <div class="license-url">https://www.jumbosouq.com/terms</div>
+  
+
+ 
+
+  <h3>Table of Contents </h3>
+  <div class="method-summary"></div>
+  <h4><a href="#Default"></a></h4>
+  <ul>
+    <li><a href="#partnerLoginPost"><code><span class="http-method">post</span> /partner/login</code></a></li>
+    <li><a href="#partnerGet"><code><span class="http-method">get</span> /partner</code></a></li>
+  <li><a href="#memberRegisterPost"><code><span class="http-method">post</span> /member/register</code></a></li>
+  <li><a href="#partnerCardsCarduidMukafaNumberTransactionsPointsRedeemPost"><code><span class="http-method">post</span> /partner/cards/{carduid}/{mukafa_number}/transactions/points/redeem</code></a></li>
+  <li><a href="#partnerCardsCarduidMukafaNumberTransactionsPurchasesPost"><code><span class="http-method">post</span> /partner/cards/{carduid}/{mukafa_number}/transactions/purchases</code></a></li>
+
+  
+  <li><a href="#partnerMemberGetAllGet"><code><span class="http-method">get</span> /partner/member/get/all</code></a></li>
+  <li><a href="#partnerMemberMemberUidGet"><code><span class="http-method">get</span> /partner/member/{member_uid}</code></a></li>
+  <li><a href="#partnerTransactionMemberMemberIdGet"><code><span class="http-method">get</span> /partner/transaction/member/{member_id}</code></a></li>
+  <li><a href="#partnerTransactionsGet"><code><span class="http-method">get</span> /partner/transactions</code></a></li>
+  </ul>
+
+  <h1><a name="Default">Api List</a></h1>
+  <div class="method"><a name="partnerLoginPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /partner/login</code></pre></div>
+    <div class="method-summary">Partner Login (<span class="nickname">partnerLoginPost</span>)</div>
+    <div class="method-notes">Authenticate a partner using email and password.</div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#partner_login_body">partner_login_body</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200">inline_response_200</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "token" : "71|p8ms2JONzkagxXuIoEsPCWRH58UAROR2Hfflc4jFb67966d4"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Successful login
+        <a href="#inline_response_200">inline_response_200</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="partnerGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /partner</code></pre></div>
+    <div class="method-summary">Get Partner Details (<span class="nickname">partnerGet</span>)</div>
+    <div class="method-notes">Retrieve details of the authenticated partner.</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200_1">inline_response_200_1</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "last_updated" : "2025-01-31T06:09:55Z",
+  "phone" : "7889481714",
+  "name" : "jumbosouq marketplace",
+  "created_at" : "2025-01-02T06:15:36Z",
+  "id" : 248216521760768,
+  "email" : "jumbosouq@example.com",
+  "phone_prefix" : "+974"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Partner details retrieved successfully
+        <a href="#inline_response_200_1">inline_response_200_1</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="memberRegisterPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /member/register</code></pre></div>
+    <div class="method-summary">Register Member with Partner (<span class="nickname">memberRegisterPost</span>)</div>
+    <div class="method-notes">Register a new member under a partner.</div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#member_register_body">member_register_body</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_201">inline_response_201</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "amount" : 5,
+  "balance" : 500,
+  "cardUID" : "879-645-606-742",
+  "member" : {
+    "birthday" : "1995-01-01T00:00:00.000+00:00",
+    "last_updated" : "2025-02-04T21:14:45Z",
+    "phone" : "9741521456",
+    "name" : "Demo Test",
+    "mukafa_number" : "107-112-318-522",
+    "date_of_registration" : "2025-02-04T21:14:45Z",
+    "email" : "email",
+    "phone_prefix" : "+91",
+    "anniversary_date" : "anniversary_date"
+  },
+  "card_name" : "KB",
+  "currency" : "QAR",
+  "pending_points" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Member registered successfully
+        <a href="#inline_response_201">inline_response_201</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="partnerCardsCarduidMukafaNumberTransactionsPointsRedeemPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /partner/cards/{carduid}/{mukafa_number}/transactions/points/redeem</code></pre></div>
+    <div class="method-summary">Redeem points (<span class="nickname">partnerCardsCarduidMukafaNumberTransactionsPointsRedeemPost</span>)</div>
+    <div class="method-notes">Redeem points for a specific card and mukafa number.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">carduid (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash;  </div>      <div class="param">mukafa_number (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash;  </div>    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#points_redeem_body">points_redeem_body</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200_6">inline_response_200_6</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "integration_id" : 250827177766912,
+  "carduid" : "879-645-606-742",
+  "card_name" : "KB",
+  "created_at" : "2025-02-05T11:07:09Z",
+  "id" : 260320580644864,
+  "mukafa_number" : "556-216-145-297",
+  "created_date" : "200.00",
+  "type" : "Debit",
+  "order_id" : "BBBVVC",
+  "mukafa_points" : "200.00",
+  "status" : "completed"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Points redeemed successfully
+        <a href="#inline_response_200_6">inline_response_200_6</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="partnerCardsCarduidMukafaNumberTransactionsPurchasesPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /partner/cards/{carduid}/{mukafa_number}/transactions/purchases</code></pre></div>
+    <div class="method-summary">Add a purchase (<span class="nickname">partnerCardsCarduidMukafaNumberTransactionsPurchasesPost</span>)</div>
+    <div class="method-notes">Add a purchase for a specific card and mukafa number.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">carduid (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash;  </div>      <div class="param">mukafa_number (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash;  </div>    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#transactions_purchases_body">transactions_purchases_body</a> (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200_5">inline_response_200_5</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "integration_id" : 250827177766912,
+  "carduid" : "879-645-606-742",
+  "purchase_amount" : "200.00",
+  "card_name" : "KB",
+  "created_at" : "2025-02-05T10:05:49Z",
+  "id" : 260305510211584,
+  "mukafa_number" : "556-216-145-297",
+  "created_date" : "200.00",
+  "type" : "Credit",
+  "order_id" : "ORDER10pp",
+  "mukafa_points" : "200.00",
+  "status" : "pending"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Purchase added successfully
+        <a href="#inline_response_200_5">inline_response_200_5</a>
+  </div> <!-- method -->
+  <hr/>
+  
+  
+  <div class="method"><a name="partnerMemberGetAllGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /partner/member/get/all</code></pre></div>
+    <div class="method-summary">Retrieve a list of partner members with optional filters and pagination (<span class="nickname">partnerMemberGetAllGet</span>)</div>
+    <div class="method-notes">Retrieve a paginated list of partner members with optional filters such as transaction ID, order ID, status, and date range.</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">per_page (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; The number of results per page (default is 10) default: 10 </div>      <div class="param">page (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200_2">inline_response_200_2</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "data" : [ {
+    "birthday" : "1995-01-01T00:00:00.000+00:00",
+    "last_updated" : "2025-02-04T21:14:45Z",
+    "createddate" : "05-02-2025",
+    "card_uid" : "879-645-606-742",
+    "mukafa_number" : "107-112-318-522",
+    "partner" : 248216521760768,
+    "phone" : "9741521456",
+    "name" : "Demo Test",
+    "card_name" : "KB",
+    "date_of_registration" : "2025-02-04T21:14:45Z",
+    "email" : "email",
+    "phone_prefix" : "+91",
+    "anniversary_date" : "anniversary_date"
+  }, {
+    "birthday" : "1995-01-01T00:00:00.000+00:00",
+    "last_updated" : "2025-02-04T21:14:45Z",
+    "createddate" : "05-02-2025",
+    "card_uid" : "879-645-606-742",
+    "mukafa_number" : "107-112-318-522",
+    "partner" : 248216521760768,
+    "phone" : "9741521456",
+    "name" : "Demo Test",
+    "card_name" : "KB",
+    "date_of_registration" : "2025-02-04T21:14:45Z",
+    "email" : "email",
+    "phone_prefix" : "+91",
+    "anniversary_date" : "anniversary_date"
+  } ],
+  "links" : {
+    "last" : "/partner/member/get/all?page=2",
+    "prev_page_url" : "prev_page_url",
+    "first" : "/partner/member/get/all?page=1"
+  },
+  "status" : "success"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A list of partner members with pagination and optional filters
+        <a href="#inline_response_200_2">inline_response_200_2</a>
+    <h4 class="field-label">400</h4>
+    Bad request, invalid parameters or filters
+        <a href="#inline_response_400">inline_response_400</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="partnerMemberMemberUidGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /partner/member/{member_uid}</code></pre></div>
+    <div class="method-summary">Find Member (<span class="nickname">partnerMemberMemberUidGet</span>)</div>
+    <div class="method-notes">Retrieve details of a specific member by their UID.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">member_uid (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash;  </div>    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_201">inline_response_201</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "amount" : 5,
+  "balance" : 500,
+  "cardUID" : "879-645-606-742",
+  "member" : {
+    "birthday" : "1995-01-01T00:00:00.000+00:00",
+    "last_updated" : "2025-02-04T21:14:45Z",
+    "phone" : "9741521456",
+    "name" : "Demo Test",
+    "mukafa_number" : "107-112-318-522",
+    "date_of_registration" : "2025-02-04T21:14:45Z",
+    "email" : "email",
+    "phone_prefix" : "+91",
+    "anniversary_date" : "anniversary_date"
+  },
+  "card_name" : "KB",
+  "currency" : "QAR",
+  "pending_points" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Member details retrieved successfully
+        <a href="#inline_response_201">inline_response_201</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="partnerTransactionMemberMemberIdGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /partner/transaction/member/{member_id}</code></pre></div>
+    <div class="method-summary">Member Recent Transaction History (<span class="nickname">partnerTransactionMemberMemberIdGet</span>)</div>
+    <div class="method-notes">Retrieve recent transaction history for a specific member.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">member_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash;  </div>    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200_3">inline_response_200_3</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "data" : [ {
+    "cardUID" : "879-645-606-742",
+    "created_at" : "2025-02-03T08:57:40Z",
+    "mukafa_number" : "556-216-145-297",
+    "type" : "Credit",
+    "purchase_amount" : "200.00",
+    "partner" : 248216521760768,
+    "card_name" : "KB",
+    "id" : 259580972670976,
+    "created_date" : "03-02-2025",
+    "order_id" : "ORDER101",
+    "mukafa_points" : "200.00",
+    "remarks" : "Issue",
+    "status" : "completed"
+  }, {
+    "cardUID" : "879-645-606-742",
+    "created_at" : "2025-02-03T08:57:40Z",
+    "mukafa_number" : "556-216-145-297",
+    "type" : "Credit",
+    "purchase_amount" : "200.00",
+    "partner" : 248216521760768,
+    "card_name" : "KB",
+    "id" : 259580972670976,
+    "created_date" : "03-02-2025",
+    "order_id" : "ORDER101",
+    "mukafa_points" : "200.00",
+    "remarks" : "Issue",
+    "status" : "completed"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Transaction history retrieved successfully
+        <a href="#inline_response_200_3">inline_response_200_3</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="partnerTransactionsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /partner/transactions</code></pre></div>
+    <div class="method-summary">Partner All Transactions (<span class="nickname">partnerTransactionsGet</span>)</div>
+    <div class="method-notes">Retrieve all transactions for the partner.</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">page (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash;  </div>      <div class="param">per_page (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; The number of results per page (default is 10) default: 10 </div>      <div class="param">transaction_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter results by transaction ID </div>      <div class="param">order_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter results by order ID </div>      <div class="param">status (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter results by status (e.g., completed, pending, cancelled, refunded) </div>      <div class="param">from_date (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter results by the start date format: date</div>      <div class="param">to_date (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter results by the end date format: date</div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_200_4">inline_response_200_4</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "first_page_url" : "http://dev-mukafa.js.qa/api/en-us/v1/partner/transactions?page=1",
+  "per_page" : 10,
+  "total" : 43,
+  "data" : [ {
+    "cardUID" : "879-645-606-742",
+    "created_at" : "2025-02-03T08:57:40Z",
+    "mukafa_number" : "556-216-145-297",
+    "member_name" : "Demo Test",
+    "type" : "Credit",
+    "purchase_amount" : "200.00",
+    "card_name" : "KB",
+    "id" : 259580972670976,
+    "created_date" : "03-02-2025",
+    "order_id" : "ORDER101",
+    "mukafa_points" : "200.00",
+    "remarks" : "Issue",
+    "status" : "completed"
+  }, {
+    "cardUID" : "879-645-606-742",
+    "created_at" : "2025-02-03T08:57:40Z",
+    "mukafa_number" : "556-216-145-297",
+    "member_name" : "Demo Test",
+    "type" : "Credit",
+    "purchase_amount" : "200.00",
+    "card_name" : "KB",
+    "id" : 259580972670976,
+    "created_date" : "03-02-2025",
+    "order_id" : "ORDER101",
+    "mukafa_points" : "200.00",
+    "remarks" : "Issue",
+    "status" : "completed"
+  } ],
+  "last_page" : 5,
+  "last_page_url" : "http://dev-mukafa.js.qa/api/en-us/v1/partner/transactions?page=5",
+  "next_page_url" : "http://dev-mukafa.js.qa/api/en-us/v1/partner/transactions?page=2",
+  "to" : 10,
+  "prev_page_url" : "prev_page_url",
+  "current_page" : 1
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Transactions retrieved successfully
+        <a href="#inline_response_200_4">inline_response_200_4</a>
+  </div> <!-- method -->
+  <hr/>
+
+  <h2><a name="__Models">Models</a></h2>
+  [ Jump to <a href="#__Methods">Methods</a> ]
+
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#inline_response_200"><code>inline_response_200</code></a></li>
+    <li><a href="#inline_response_200_1"><code>inline_response_200_1</code></a></li>
+    <li><a href="#inline_response_200_2"><code>inline_response_200_2</code></a></li>
+    <li><a href="#inline_response_200_2_data"><code>inline_response_200_2_data</code></a></li>
+    <li><a href="#inline_response_200_2_links"><code>inline_response_200_2_links</code></a></li>
+    <li><a href="#inline_response_200_3"><code>inline_response_200_3</code></a></li>
+    <li><a href="#inline_response_200_3_data"><code>inline_response_200_3_data</code></a></li>
+    <li><a href="#inline_response_200_4"><code>inline_response_200_4</code></a></li>
+    <li><a href="#inline_response_200_4_data"><code>inline_response_200_4_data</code></a></li>
+    <li><a href="#inline_response_200_5"><code>inline_response_200_5</code></a></li>
+    <li><a href="#inline_response_200_6"><code>inline_response_200_6</code></a></li>
+    <li><a href="#inline_response_201"><code>inline_response_201</code></a></li>
+    <li><a href="#inline_response_201_member"><code>inline_response_201_member</code></a></li>
+    <li><a href="#inline_response_400"><code>inline_response_400</code></a></li>
+    <li><a href="#member_register_body"><code>member_register_body</code></a></li>
+    <li><a href="#partner_login_body"><code>partner_login_body</code></a></li>
+    <li><a href="#points_redeem_body"><code>points_redeem_body</code></a></li>
+    <li><a href="#transactions_purchases_body"><code>transactions_purchases_body</code></a></li>
+  </ol>
+
+  <div class="model">
+    <h3><a name="inline_response_200"><code>inline_response_200</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">token (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 71|p8ms2JONzkagxXuIoEsPCWRH58UAROR2Hfflc4jFb67966d4</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_1"><code>inline_response_200_1</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 248216521760768</span></div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: jumbosouq marketplace</span></div>
+<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: jumbosouq@example.com</span></div>
+<div class="param">phone_prefix (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: +974</span></div>
+<div class="param">phone (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 7889481714</span></div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-01-02T06:15:36Z</span></div>
+<div class="param">last_updated (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-01-31T06:09:55Z</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_2"><code>inline_response_200_2</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">data (optional)</div><div class="param-desc"><span class="param-type"><a href="#inline_response_200_2_data">array[inline_response_200_2_data]</a></span>  </div>
+<div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#inline_response_200_2_links">inline_response_200_2_links</a></span>  </div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: success</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_2_data"><code>inline_response_200_2_data</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">mukafa_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 107-112-318-522</span></div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Demo Test</span></div>
+<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">phone_prefix (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: +91</span></div>
+<div class="param">phone (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 9741521456</span></div>
+<div class="param">birthday (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span>  format: date</div>
+          <div class="param-desc"><span class="param-type">example: Sun Jan 01 00:00:00 GMT 1995</span></div>
+<div class="param">date_of_registration (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-04T21:14:45Z</span></div>
+<div class="param">last_updated (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-04T21:14:45Z</span></div>
+<div class="param">anniversary_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">createddate (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 05-02-2025</span></div>
+<div class="param">card_uid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 879-645-606-742</span></div>
+<div class="param">card_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: KB</span></div>
+<div class="param">partner (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 248216521760768</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_2_links"><code>inline_response_200_2_links</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">first (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: /partner/member/get/all?page&#x3D;1</span></div>
+<div class="param">last (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: /partner/member/get/all?page&#x3D;2</span></div>
+<div class="param">prev_page_url (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_3"><code>inline_response_200_3</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">data (optional)</div><div class="param-desc"><span class="param-type"><a href="#inline_response_200_3_data">array[inline_response_200_3_data]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_3_data"><code>inline_response_200_3_data</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 259580972670976</span></div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-03T08:57:40Z</span></div>
+<div class="param">order_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: ORDER101</span></div>
+<div class="param">mukafa_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 556-216-145-297</span></div>
+<div class="param">purchase_amount (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">mukafa_points (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">card_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: KB</span></div>
+<div class="param">cardUID (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 879-645-606-742</span></div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: completed</span></div>
+<div class="param">remarks (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Issue</span></div>
+<div class="param">created_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 03-02-2025</span></div>
+<div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Credit</span></div>
+<div class="param">partner (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 248216521760768</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_4"><code>inline_response_200_4</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">current_page (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 1</span></div>
+<div class="param">data (optional)</div><div class="param-desc"><span class="param-type"><a href="#inline_response_200_4_data">array[inline_response_200_4_data]</a></span>  </div>
+<div class="param">first_page_url (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: http://dev-mukafa.js.qa/api/en-us/v1/partner/transactions?page&#x3D;1</span></div>
+<div class="param">last_page (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 5</span></div>
+<div class="param">last_page_url (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: http://dev-mukafa.js.qa/api/en-us/v1/partner/transactions?page&#x3D;5</span></div>
+<div class="param">next_page_url (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: http://dev-mukafa.js.qa/api/en-us/v1/partner/transactions?page&#x3D;2</span></div>
+<div class="param">prev_page_url (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">per_page (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 10</span></div>
+<div class="param">to (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 10</span></div>
+<div class="param">total (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 43</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_4_data"><code>inline_response_200_4_data</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 259580972670976</span></div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-03T08:57:40Z</span></div>
+<div class="param">order_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: ORDER101</span></div>
+<div class="param">purchase_amount (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">mukafa_points (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">member_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Demo Test</span></div>
+<div class="param">mukafa_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 556-216-145-297</span></div>
+<div class="param">card_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: KB</span></div>
+<div class="param">cardUID (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 879-645-606-742</span></div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: completed</span></div>
+<div class="param">remarks (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Issue</span></div>
+<div class="param">created_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 03-02-2025</span></div>
+<div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Credit</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_5"><code>inline_response_200_5</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 260305510211584</span></div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-05T10:05:49Z</span></div>
+<div class="param">mukafa_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 556-216-145-297</span></div>
+<div class="param">card_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: KB</span></div>
+<div class="param">carduid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 879-645-606-742</span></div>
+<div class="param">order_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: ORDER10pp</span></div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: pending</span></div>
+<div class="param">integration_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 250827177766912</span></div>
+<div class="param">purchase_amount (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">mukafa_points (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">created_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Credit</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_200_6"><code>inline_response_200_6</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 260320580644864</span></div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-05T11:07:09Z</span></div>
+<div class="param">mukafa_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 556-216-145-297</span></div>
+<div class="param">card_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: KB</span></div>
+<div class="param">carduid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 879-645-606-742</span></div>
+<div class="param">order_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: BBBVVC</span></div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: completed</span></div>
+<div class="param">integration_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 250827177766912</span></div>
+<div class="param">mukafa_points (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">created_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200.00</span></div>
+<div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Debit</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_201"><code>inline_response_201</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">member (optional)</div><div class="param-desc"><span class="param-type"><a href="#inline_response_201_member">inline_response_201_member</a></span>  </div>
+<div class="param">balance (optional)</div><div class="param-desc"><span class="param-type"><a href="#float">Float</a></span>  format: float</div>
+          <div class="param-desc"><span class="param-type">example: 500</span></div>
+<div class="param">amount (optional)</div><div class="param-desc"><span class="param-type"><a href="#float">Float</a></span>  format: float</div>
+          <div class="param-desc"><span class="param-type">example: 5</span></div>
+<div class="param">currency (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: QAR</span></div>
+<div class="param">cardUID (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 879-645-606-742</span></div>
+<div class="param">card_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: KB</span></div>
+<div class="param">pending_points (optional)</div><div class="param-desc"><span class="param-type"><a href="#float">Float</a></span>  format: float</div>
+          <div class="param-desc"><span class="param-type">example: 0</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_201_member"><code>inline_response_201_member</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">mukafa_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 107-112-318-522</span></div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Demo Test</span></div>
+<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">birthday (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span>  format: date</div>
+          <div class="param-desc"><span class="param-type">example: Sun Jan 01 00:00:00 GMT 1995</span></div>
+<div class="param">phone_prefix (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: +91</span></div>
+<div class="param">phone (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 9741521456</span></div>
+<div class="param">date_of_registration (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-04T21:14:45Z</span></div>
+<div class="param">last_updated (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span>  format: date-time</div>
+          <div class="param-desc"><span class="param-type">example: 2025-02-04T21:14:45Z</span></div>
+<div class="param">anniversary_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_400"><code>inline_response_400</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">error (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Invalid date range</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="member_register_body"><code>member_register_body</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">phone </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 8045804501</span></div>
+<div class="param">phone_prefix </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: +91</span></div>
+<div class="param">partner_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 248216521760768</span></div>
+<div class="param">birthday </div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span>  format: date</div>
+          <div class="param-desc"><span class="param-type">example: Sun Jan 01 00:00:00 GMT 1995</span></div>
+<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">anniversary_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span>  format: date</div>
+          <div class="param-desc"><span class="param-type">example: Sat Feb 01 00:00:00 GMT 2025</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="partner_login_body"><code>partner_login_body</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">email </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">password </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="points_redeem_body"><code>points_redeem_body</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">points </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200</span></div>
+<div class="param">order_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: BBBVVC</span></div>
+<div class="param">integration_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 250827177766912</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="transactions_purchases_body"><code>transactions_purchases_body</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">purchase_amount </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 200</span></div>
+<div class="param">note </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: ORDER10pp</span></div>
+<div class="param">integration_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 123</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  </body>
+</html>
